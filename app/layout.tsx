@@ -6,6 +6,7 @@ import { StoreProvider } from '@/components/store-provider'
 import { ToastProvider } from '@/components/toast-provider'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { SiteFooterVisibility } from '@/components/site-footer-visibility'
 import { MobileTabBar } from '@/components/mobile-tab-bar'
 import { WhatsappWidget } from '@/components/whatsapp-widget'
 import { CartDrawer } from '@/components/cart-drawer'
@@ -62,7 +63,9 @@ export default function RootLayout({
               <SiteHeader />
               <ClosedStoreNotice />
               <main className="flex-1 pb-16 md:pb-0">{children}</main>
-              <SiteFooter />
+              <SiteFooterVisibility>
+                <SiteFooter />
+              </SiteFooterVisibility>
             </div>
             <MobileTabBar />
             <WhatsappWidget />
