@@ -17,9 +17,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   return (
     <>
       <PageHero
-        eyebrow="Catálogo online"
-        title="Productos para cada mascota"
-        description="Encontrá alimentos, cuidado, juguetes y accesorios. Filtrá por mascota, categoría o marca y elegí con tranquilidad."
+        eyebrow="Comprar fácil"
+        title="Encontrá lo mejor para tu mascota"
+        description="Elegí para quién estás comprando, contanos qué necesita y te ayudamos a encontrarlo sin vueltas."
+        titleHref="#primer-producto"
       />
       <CatalogClient
         products={products}

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, ChevronRight, Heart, Minus, Plus, ShieldCheck, ShoppingCart, Truck, MessageCircle } from 'lucide-react'
+import { Check, ChevronRight, Minus, Plus, ShieldCheck, ShoppingCart, Truck, MessageCircle } from 'lucide-react'
 import type { Product } from '@/lib/types'
 import { formatPrice, discountPercent } from '@/lib/format'
 import { useStore } from './store-provider'
@@ -13,6 +13,7 @@ import { ProductTagBadge, StockBadge } from './product-badges'
 import { StarRating } from './star-rating'
 import { waLink } from '@/lib/whatsapp'
 import { cn } from '@/lib/utils'
+import { FavoriteButton } from './favorite-button'
 
 export function ProductDetailClient({ product, related }: { product: Product; related: Product[] }) {
   const router = useRouter()
@@ -59,9 +60,12 @@ export function ProductDetailClient({ product, related }: { product: Product; re
           <section className="flex flex-col justify-center">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-brand">{product.brand}</p>
-              <button onClick={() => toggleFavorite(product.id)} className={cn('flex size-11 items-center justify-center rounded-full border border-border bg-card transition-colors', favorite ? 'text-promo' : 'text-muted-foreground hover:text-promo')} aria-label="Guardar en favoritos">
-                <Heart className={cn('size-5', favorite && 'fill-current')} />
-              </button>
+              <FavoriteButton
+                active={favorite}
+                onToggle={() => toggleFavorite(product.id)}
+                className="size-11 rounded-full border border-border bg-card transition-colors hover:text-promo"
+                iconClassName="size-5"
+              />
             </div>
             <h1 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
             <div className="mt-4 flex items-center gap-3">

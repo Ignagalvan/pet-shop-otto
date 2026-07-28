@@ -48,11 +48,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-lg animate-in slide-in-from-top-2 fade-in sm:slide-in-from-bottom-2"
+            className="pointer-events-auto flex w-auto max-w-[calc(100vw-2rem)] items-center gap-2.5 rounded-full border border-border bg-card px-3 py-2 shadow-lg animate-in slide-in-from-top-2 fade-in sm:slide-in-from-bottom-2"
           >
             <span
               className={cn(
-                'flex size-8 shrink-0 items-center justify-center rounded-full',
+                'flex size-7 shrink-0 items-center justify-center rounded-full',
                 t.variant === 'success' && 'bg-success/15 text-success',
                 t.variant === 'error' && 'bg-destructive/15 text-destructive',
                 t.variant === 'info' && 'bg-brand/15 text-brand',
@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               {t.variant === 'error' && <TriangleAlert className="size-4" />}
               {t.variant === 'info' && <Info className="size-4" />}
             </span>
-            <p className="flex-1 text-sm font-medium leading-snug text-card-foreground">
+            <p className="text-sm font-bold leading-snug text-card-foreground">
               {t.message}
             </p>
             <button

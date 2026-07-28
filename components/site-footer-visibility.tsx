@@ -3,22 +3,18 @@
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 
-const FOOTER_ROUTES = new Set([
-  '/',
-  '/productos',
-  '/contacto',
-  '/ayuda',
-  '/pedidos-especiales',
-])
+const COMPACT_FOOTER_ROUTES = new Set(['/contacto', '/ayuda', '/pedidos-especiales'])
 
 type SiteFooterVisibilityProps = {
-  children: ReactNode
+  full: ReactNode
+  compact: ReactNode
 }
 
-export function SiteFooterVisibility({ children }: SiteFooterVisibilityProps) {
+export function SiteFooterVisibility({ full, compact }: SiteFooterVisibilityProps) {
   const pathname = usePathname()
 
-  if (!FOOTER_ROUTES.has(pathname)) return null
+  if (pathname === '/') return full
+  if (COMPACT_FOOTER_ROUTES.has(pathname)) return compact
 
-  return children
+  return null
 }

@@ -68,7 +68,7 @@ export function SearchBar({
             onBlur={() => {
               blurTimeout.current = setTimeout(() => setOpen(false), 150)
             }}
-            placeholder="Buscar alimentos, juguetes, marcas..."
+            placeholder="¿Qué estás buscando para tu mascota?"
             aria-label="Buscar productos"
             className="h-12 w-full rounded-2xl border border-border bg-secondary/60 pl-12 pr-11 text-sm font-medium text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-brand focus:bg-card focus:ring-2 focus:ring-brand/20"
           />
