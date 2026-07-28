@@ -6,11 +6,14 @@ import { StoreProvider } from '@/components/store-provider'
 import { ToastProvider } from '@/components/toast-provider'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { SiteFooterVisibility } from '@/components/site-footer-visibility'
+import { CompactSiteFooter } from '@/components/compact-site-footer'
 import { MobileTabBar } from '@/components/mobile-tab-bar'
 import { WhatsappWidget } from '@/components/whatsapp-widget'
 import { CartDrawer } from '@/components/cart-drawer'
 import { ClosedStoreNotice } from '@/components/closed-store-notice'
 import { BRAND_FULL_NAME } from '@/lib/data'
+import { PawEntrySplash } from '@/components/paw-entry-splash'
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -56,13 +59,17 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${nunito.variable} ${poppins.variable} bg-background`}>
       <body className="min-h-dvh">
+        <PawEntrySplash />
         <ToastProvider>
           <StoreProvider>
             <div className="flex min-h-dvh flex-col">
               <SiteHeader />
               <ClosedStoreNotice />
               <main className="flex-1 pb-16 md:pb-0">{children}</main>
-              <SiteFooter />
+              <SiteFooterVisibility
+                full={<SiteFooter />}
+                compact={<CompactSiteFooter />}
+              />
             </div>
             <MobileTabBar />
             <WhatsappWidget />

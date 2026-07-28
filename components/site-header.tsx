@@ -38,7 +38,7 @@ const announcements = [
 ]
 
 export function SiteHeader() {
-  const { cartCount, favorites, openCart } = useStore()
+  const { cartCount, cartAnimationId, favorites, openCart } = useStore()
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
   const onCartPage = pathname === '/carrito'
@@ -126,7 +126,7 @@ export function SiteHeader() {
                 >
                   <ShoppingCart className="size-5" />
                   <span className="hidden sm:inline">Tu carrito</span>
-                  {cartCount > 0 && <CartCount count={cartCount} />}
+                  {cartCount > 0 && <CartCount key={cartAnimationId} count={cartCount} />}
                 </span>
               ) : (
                 <button
@@ -137,7 +137,7 @@ export function SiteHeader() {
                 >
                   <ShoppingCart className="size-5" />
                   <span className="hidden sm:inline">Carrito</span>
-                  {cartCount > 0 && <CartCount count={cartCount} />}
+                  {cartCount > 0 && <CartCount key={cartAnimationId} count={cartCount} />}
                 </button>
               )}
             </div>
@@ -219,7 +219,7 @@ export function SiteHeader() {
 
 function CartCount({ count }: { count: number }) {
   return (
-    <span className="flex min-w-5 items-center justify-center rounded-full bg-promo px-1 text-[11px] font-bold text-promo-foreground">
+    <span className="cart-count-bump flex min-w-5 items-center justify-center rounded-full bg-promo px-1 text-[11px] font-bold text-promo-foreground">
       {count}
     </span>
   )

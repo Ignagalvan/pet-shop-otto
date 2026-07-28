@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Filter, SearchX, SlidersHorizontal, X } from 'lucide-react'
+import { Filter, PawPrint, SearchX, SlidersHorizontal, X } from 'lucide-react'
 import { ProductCard } from './product-card'
 import { brands, categories, petTypes } from '@/lib/data'
 import type { Product } from '@/lib/types'
@@ -29,6 +29,8 @@ export function CatalogClient({
   const [sort, setSort] = useState('featured')
   const [mobileFilters, setMobileFilters] = useState(false)
   const query = (initial.q ?? '').trim().toLowerCase()
+  const selectedPet = petTypes.find((item) => item.slug === pet)
+  const selectedCategory = categories.find((item) => item.slug === category)
 
   const filtered = useMemo(() => {
     const result = products.filter((product) => {
@@ -71,8 +73,8 @@ export function CatalogClient({
           </button>
         )}
       </div>
-      <FilterGroup label="Mascota" value={pet} onChange={setPet} options={petTypes} />
-      <FilterGroup label="Categoría" value={category} onChange={setCategory} options={categories} />
+      <FilterGroup label="¿Para quién comprás?" value={pet} onChange={setPet} options={petTypes} />
+      <FilterGroup label="¿Qué necesita?" value={category} onChange={setCategory} options={categories} />
       <div>
         <label htmlFor="brand" className="mb-3 block text-sm font-extrabold text-foreground">Marca</label>
         <select id="brand" value={brand} onChange={(e) => setBrand(e.target.value)} className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-brand">
@@ -93,10 +95,36 @@ export function CatalogClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
+      {selectedPet ? (
+        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-brand/15 bg-brand-light/65 px-4 py-3 text-sm">
+          <span className="flex size-8 items-center justify-center rounded-full bg-brand text-white">
+            <PawPrint className="size-4" aria-hidden="true" />
+          </span>
+          <span className="font-semibold text-muted-foreground">Estás buscando para</span>
+          <span className="font-extrabold text-foreground">{selectedPet.label}</span>
+          {selectedCategory ? (
+            <>
+              <span className="text-brand/45" aria-hidden="true">•</span>
+              <span className="font-extrabold text-brand">{selectedCategory.label}</span>
+            </>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setPet('')}
+            className="ml-auto rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-brand transition-colors hover:bg-card"
+          >
+            Cambiar mascota
+          </button>
+        </div>
+      ) : null}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-muted-foreground">
-            {query ? `Resultados para “${initial.q}”` : 'Todo para cuidar a tu mascota'}
+            {query
+              ? `Resultados para “${initial.q}”`
+              : selectedPet
+                ? `Opciones pensadas para ${selectedPet.label.toLocaleLowerCase('es')}`
+                : 'Todo para cuidar a tu mascota'}
           </p>
           <p className="mt-1 text-sm font-bold text-foreground">{filtered.length} productos</p>
         </div>
@@ -119,7 +147,15 @@ export function CatalogClient({
         </aside>
         {filtered.length ? (
           <div className="grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((product) => <ProductCard key={product.id} product={product} />)}
+            {filtered.map((product, index) => (
+              <div
+                key={product.id}
+                id={index === 0 ? 'primer-producto' : undefined}
+                className={index === 0 ? 'scroll-mt-36' : undefined}
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="flex min-h-96 flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card p-8 text-center">

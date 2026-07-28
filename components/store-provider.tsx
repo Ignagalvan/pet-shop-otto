@@ -24,6 +24,7 @@ interface StoreContextValue {
   items: CartItem[]
   favorites: string[]
   cartCount: number
+  cartAnimationId: number
   subtotal: number
   isCartOpen: boolean
   openCart: () => void
@@ -51,6 +52,7 @@ export function useStore() {
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [favorites, setFavorites] = useState<string[]>([])
+  const [cartAnimationId, setCartAnimationId] = useState(0)
   const [isCartOpen, setCartOpen] = useState(false)
   const { toast } = useToast()
 
@@ -80,7 +82,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           },
         ]
       })
-      setTimeout(() => toast(`${product.name} agregado al carrito`, 'success'), 0)
+      setCartAnimationId((current) => current + 1)
+      setTimeout(() => toast('Producto agregado al carrito', 'success'), 0)
     },
     [toast],
   )
@@ -108,12 +111,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setFavorites((prev) =>
         has ? prev.filter((id) => id !== productId) : [...prev, productId],
       )
-      setTimeout(
-        () => toast(has ? 'Quitado de favoritos' : 'Agregado a favoritos', has ? 'info' : 'success'),
-        0,
-      )
     },
-    [favorites, toast],
+    [favorites],
   )
 
   const isFavorite = useCallback((id: string) => favorites.includes(id), [favorites])
@@ -127,6 +126,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       items,
       favorites,
       cartCount,
+      cartAnimationId,
       subtotal,
       isCartOpen,
       openCart,
@@ -143,6 +143,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       items,
       favorites,
       cartCount,
+      cartAnimationId,
       subtotal,
       isCartOpen,
       openCart,

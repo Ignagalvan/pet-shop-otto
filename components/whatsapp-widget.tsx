@@ -21,7 +21,7 @@ export function WhatsappWidget() {
   if (pathname === '/checkout' || pathname === '/pedido-confirmado') return null
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end gap-3 md:bottom-6 md:right-6">
+    <div className="fixed bottom-6 right-6 z-50 hidden flex-col items-end gap-3 md:flex">
       {open && (
         <div className="w-72 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-2 fade-in">
           <div className="flex items-center gap-3 bg-success p-4 text-success-foreground">

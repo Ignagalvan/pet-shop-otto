@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, ShoppingCart, MessageCircle, BellRing } from 'lucide-react'
+import { ShoppingCart, MessageCircle, BellRing } from 'lucide-react'
 import type { Product } from '@/lib/types'
 import { formatPrice, discountPercent } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,7 @@ import { useToast } from './toast-provider'
 import { ProductTagBadge, StockBadge } from './product-badges'
 import { StarRating } from './star-rating'
 import { waLink } from '@/lib/whatsapp'
+import { FavoriteButton } from './favorite-button'
 
 export function ProductCard({ product }: { product: Product }) {
   const { addToCart, toggleFavorite, isFavorite } = useStore()
@@ -33,14 +34,12 @@ export function ProductCard({ product }: { product: Product }) {
         )}
       </div>
 
-      <button
-        onClick={() => toggleFavorite(product.id)}
-        aria-label={fav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-        aria-pressed={fav}
-        className="absolute right-3 top-3 z-10 flex size-9 items-center justify-center rounded-full bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:text-promo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <Heart className={cn('size-4.5 transition-all', fav && 'fill-promo text-promo')} />
-      </button>
+      <FavoriteButton
+        active={fav}
+        onToggle={() => toggleFavorite(product.id)}
+        className="absolute right-3 top-3 z-10 size-9 rounded-full bg-card/90 shadow-sm backdrop-blur transition-colors hover:text-promo"
+        iconClassName="size-4.5"
+      />
 
       <Link
         href={`/producto/${product.slug}`}

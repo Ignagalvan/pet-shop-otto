@@ -5,10 +5,12 @@ export function PageHero({
   eyebrow,
   title,
   description,
+  titleHref,
 }: {
   eyebrow?: string
   title: string
   description: string
+  titleHref?: string
 }) {
   return (
     <section className="border-b border-border bg-gradient-to-br from-brand-light via-background to-background">
@@ -24,7 +26,15 @@ export function PageHero({
           </p>
         )}
         <h1 className="max-w-3xl text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          {title}
+          {titleHref ? (
+            <Link
+              href={titleHref}
+              className="group inline-flex items-center gap-2 rounded-lg transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {title}
+              <ChevronRight className="size-6 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </Link>
+          ) : title}
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">{description}</p>
       </div>

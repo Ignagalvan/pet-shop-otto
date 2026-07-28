@@ -2,20 +2,19 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, LayoutGrid, Search, Heart, ShoppingCart } from 'lucide-react'
+import { Heart, Home, PawPrint, ShoppingCart } from 'lucide-react'
 import { useStore } from './store-provider'
 import { cn } from '@/lib/utils'
 
 export function MobileTabBar() {
   const pathname = usePathname()
-  const { cartCount, favorites, openCart } = useStore()
+  const { cartCount, cartAnimationId, favorites, openCart } = useStore()
 
   if (pathname === '/checkout' || pathname === '/pedido-confirmado') return null
 
   const tabs = [
     { label: 'Inicio', icon: Home, href: '/' },
-    { label: 'Categorías', icon: LayoutGrid, href: '/productos' },
-    { label: 'Buscar', icon: Search, href: '/productos' },
+    { label: 'Mascotas', icon: PawPrint, href: '/#elegi-tu-mascota' },
     { label: 'Favoritos', icon: Heart, href: '/favoritos', badge: favorites.length },
   ]
 
@@ -24,7 +23,7 @@ export function MobileTabBar() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur md:hidden"
       aria-label="Navegación inferior"
     >
-      <div className="grid grid-cols-5">
+      <div className="grid grid-cols-4">
         {tabs.map((t) => {
           const active = pathname === t.href
           return (
@@ -60,7 +59,7 @@ export function MobileTabBar() {
           <span className="relative">
             <ShoppingCart className="size-5.5" />
             {cartCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex min-w-4 items-center justify-center rounded-full bg-promo px-1 text-[9px] font-bold text-promo-foreground">
+              <span key={cartAnimationId} className="cart-count-bump absolute -right-2 -top-1.5 flex min-w-4 items-center justify-center rounded-full bg-promo px-1 text-[9px] font-bold text-promo-foreground">
                 {cartCount}
               </span>
             )}
