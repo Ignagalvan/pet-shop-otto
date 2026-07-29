@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { CatalogClient } from '@/components/catalog-client'
 import { PageHero } from '@/components/page-hero'
-import { products } from '@/lib/data'
+import { catalogOptions, getPublicProducts } from '@/lib/catalog'
 
 export const metadata: Metadata = {
   title: 'Productos',
@@ -13,6 +13,8 @@ type Search = Promise<Record<string, string | string[] | undefined>>
 export default async function ProductsPage({ searchParams }: { searchParams: Search }) {
   const params = await searchParams
   const read = (key: string) => typeof params[key] === 'string' ? params[key] : undefined
+  const products = await getPublicProducts()
+  const options = catalogOptions(products)
 
   return (
     <>
@@ -24,12 +26,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
       />
       <CatalogClient
         products={products}
+        options={options}
         initial={{
           q: read('q'),
           mascota: read('mascota'),
           categoria: read('categoria'),
           marca: read('marca'),
-          oferta: read('oferta') === 'true',
+          oferta: ['1', 'true'].includes(read('oferta') ?? ''),
         }}
       />
     </>

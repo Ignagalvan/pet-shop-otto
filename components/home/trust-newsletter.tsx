@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Truck, ShieldCheck, RotateCcw, Headphones, Send } from "lucide-react"
 import { useToast } from "../toast-provider"
-import { brands } from "@/lib/data"
 
 const trust = [
   { icon: Truck, title: "Envíos rápidos", text: "A todo el país y retiro en el local." },
@@ -12,7 +11,7 @@ const trust = [
   { icon: Headphones, title: "Atención humana", text: "Te asesoramos por WhatsApp." },
 ]
 
-export function TrustNewsletter() {
+export function TrustNewsletter({ brands }: { brands: string[] }) {
   const { toast } = useToast()
   const [email, setEmail] = useState("")
 
@@ -39,16 +38,18 @@ export function TrustNewsletter() {
         ))}
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 rounded-2xl border border-border bg-card px-6 py-5 shadow-sm">
-        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Trabajamos con
-        </span>
-        {brands.map((b) => (
-          <span key={b} className="text-sm font-extrabold text-foreground/50">
-            {b}
+      {brands.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 rounded-2xl border border-border bg-card px-6 py-5 shadow-sm">
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Trabajamos con
           </span>
-        ))}
-      </div>
+          {brands.map((b) => (
+            <span key={b} className="text-sm font-extrabold text-foreground/50">
+              {b}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="mt-6 overflow-hidden rounded-3xl bg-brand px-6 py-8 text-primary-foreground md:px-10 md:py-10">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center md:flex-row md:text-left">

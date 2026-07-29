@@ -69,8 +69,12 @@ export function ProductDetailClient({ product, related }: { product: Product; re
             </div>
             <h1 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
             <div className="mt-4 flex items-center gap-3">
-              <StarRating rating={product.rating} count={product.reviewsCount} />
-              <span className="text-sm text-muted-foreground">Código {product.id.toUpperCase()}</span>
+              {product.reviewsCount > 0 && (
+                <StarRating rating={product.rating} count={product.reviewsCount} />
+              )}
+              <span className="text-sm text-muted-foreground">
+                Código {product.id.slice(0, 8).toUpperCase()}
+              </span>
             </div>
             <p className="mt-5 leading-7 text-muted-foreground">{product.description}</p>
 
@@ -128,12 +132,14 @@ export function ProductDetailClient({ product, related }: { product: Product; re
           <section className="rounded-3xl border border-border bg-card p-6 sm:p-8">
             <h2 className="text-2xl font-extrabold">Todo lo que necesitás saber</h2>
             <div className="mt-6 grid gap-6 sm:grid-cols-2">
-              <div>
-                <h3 className="font-bold">Beneficios</h3>
-                <ul className="mt-3 space-y-2">
-                  {product.benefits.map((benefit) => <li key={benefit} className="flex gap-2 text-sm text-muted-foreground"><Check className="mt-0.5 size-4 shrink-0 text-success" />{benefit}</li>)}
-                </ul>
-              </div>
+              {product.benefits.length > 0 && (
+                <div>
+                  <h3 className="font-bold">Beneficios</h3>
+                  <ul className="mt-3 space-y-2">
+                    {product.benefits.map((benefit) => <li key={benefit} className="flex gap-2 text-sm text-muted-foreground"><Check className="mt-0.5 size-4 shrink-0 text-success" />{benefit}</li>)}
+                  </ul>
+                </div>
+              )}
               <div>
                 <h3 className="font-bold">Características</h3>
                 <dl className="mt-3 divide-y divide-border">
@@ -145,18 +151,27 @@ export function ProductDetailClient({ product, related }: { product: Product; re
             {product.usage && <Detail title="Modo de uso" text={product.usage} />}
             {product.important && <div className="mt-5 rounded-2xl bg-brown/10 p-4 text-sm leading-6 text-foreground"><strong>Importante: </strong>{product.important}</div>}
           </section>
-          <section id="opiniones" className="rounded-3xl border border-border bg-card p-6 sm:p-8">
-            <h2 className="text-2xl font-extrabold">Opiniones</h2>
-            <div className="mt-2"><StarRating rating={product.rating} count={product.reviewsCount} /></div>
-            <div className="mt-5 space-y-5">
-              {product.reviews?.map((review) => (
-                <article key={review.id} className="border-t border-border pt-5 first:border-0 first:pt-0">
-                  <div className="flex justify-between gap-2"><strong className="text-sm">{review.author}</strong><span className="text-xs text-muted-foreground">{review.date}</span></div>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{review.text}</p>
-                </article>
-              ))}
-            </div>
-          </section>
+          {product.reviewsCount > 0 ? (
+            <section id="opiniones" className="rounded-3xl border border-border bg-card p-6 sm:p-8">
+              <h2 className="text-2xl font-extrabold">Opiniones</h2>
+              <div className="mt-2"><StarRating rating={product.rating} count={product.reviewsCount} /></div>
+              <div className="mt-5 space-y-5">
+                {product.reviews?.map((review) => (
+                  <article key={review.id} className="border-t border-border pt-5 first:border-0 first:pt-0">
+                    <div className="flex justify-between gap-2"><strong className="text-sm">{review.author}</strong><span className="text-xs text-muted-foreground">{review.date}</span></div>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{review.text}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="rounded-3xl border border-border bg-card p-6 sm:p-8">
+              <h2 className="text-xl font-extrabold">¿Tenés dudas?</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Escribinos por WhatsApp y te ayudamos a confirmar si este producto es el indicado para tu mascota.
+              </p>
+            </section>
+          )}
         </div>
       </div>
 

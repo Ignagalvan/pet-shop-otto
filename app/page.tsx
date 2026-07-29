@@ -3,11 +3,14 @@ import { Hero } from '@/components/home/hero'
 import { ProductSection } from '@/components/home/product-section'
 import { PromoBanners } from '@/components/home/promo-banners'
 import { TrustNewsletter } from '@/components/home/trust-newsletter'
-import { getFeatured, getOffers } from '@/lib/data'
+import { getPublicProducts } from '@/lib/catalog'
 
-export default function HomePage() {
-  const featuredProducts = getFeatured()
-  const offerProducts = getOffers()
+export default async function HomePage() {
+  const products = await getPublicProducts()
+  const selectedProducts = products.filter((product) => product.featured)
+  const featuredProducts = selectedProducts.length ? selectedProducts : products.slice(0, 8)
+  const offerProducts = products.filter((product) => product.tags.includes('oferta'))
+  const brands = [...new Set(products.map((product) => product.brand))].slice(0, 12)
 
   return (
     <>
@@ -28,7 +31,7 @@ export default function HomePage() {
         href="/productos?oferta=1"
         products={offerProducts}
       />
-      <TrustNewsletter />
+      <TrustNewsletter brands={brands} />
     </>
   )
 }

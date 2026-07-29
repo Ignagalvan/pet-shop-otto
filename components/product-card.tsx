@@ -62,7 +62,9 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="text-xs font-bold uppercase tracking-wide text-brand">
             {product.brand}
           </span>
-          <StarRating rating={product.rating} count={product.reviewsCount} />
+          {product.reviewsCount > 0 && (
+            <StarRating rating={product.rating} count={product.reviewsCount} />
+          )}
         </div>
 
         <Link

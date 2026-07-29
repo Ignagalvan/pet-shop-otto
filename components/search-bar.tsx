@@ -1,11 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, X } from 'lucide-react'
-import { products } from '@/lib/data'
+import type { Product } from '@/lib/types'
 import { formatPrice } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -21,19 +21,32 @@ export function SearchBar({
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [suggestions, setSuggestions] = useState<Product[]>([])
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const suggestions = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return []
-    return products
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q),
-      )
-      .slice(0, 5)
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2) return
+
+    const controller = new AbortController()
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal,
+        })
+        if (!response.ok) return
+        setSuggestions(await response.json() as Product[])
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          setSuggestions([])
+        }
+      }
+    }, 180)
+
+    return () => {
+      window.clearTimeout(timeout)
+      controller.abort()
+    }
   }, [query])
 
   function submit(e: React.FormEvent) {
@@ -62,6 +75,7 @@ export function SearchBar({
             autoFocus={autoFocus}
             onChange={(e) => {
               setQuery(e.target.value)
+              if (e.target.value.trim().length < 2) setSuggestions([])
               setOpen(true)
             }}
             onFocus={() => setOpen(true)}
@@ -75,7 +89,10 @@ export function SearchBar({
           {query && (
             <button
               type="button"
-              onClick={() => setQuery('')}
+              onClick={() => {
+                setQuery('')
+                setSuggestions([])
+              }}
               aria-label="Limpiar búsqueda"
               className="absolute right-3 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted"
             >

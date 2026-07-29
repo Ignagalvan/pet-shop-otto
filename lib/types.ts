@@ -1,4 +1,11 @@
-export type PetType = 'perros' | 'gatos' | 'aves' | 'roedores' | 'caballos' | 'otras'
+export type PetType =
+  | 'perros'
+  | 'gatos'
+  | 'aves'
+  | 'peces'
+  | 'roedores'
+  | 'caballos'
+  | 'otras'
 
 export type CategorySlug =
   | 'alimentos'
@@ -8,6 +15,8 @@ export type CategorySlug =
   | 'camas'
   | 'paseo'
   | 'accesorios'
+  | 'semillas-granja'
+  | 'otros'
 
 export type LifeStage = 'cachorro' | 'adulto' | 'senior' | 'todos'
 
@@ -19,6 +28,7 @@ export interface Variant {
   id: string
   label: string
   price: number
+  mode?: 'package' | 'kg'
 }
 
 export interface Review {
