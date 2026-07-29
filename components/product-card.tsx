@@ -14,7 +14,7 @@ import { waLink } from '@/lib/whatsapp'
 import { FavoriteButton } from './favorite-button'
 
 export function ProductCard({ product }: { product: Product }) {
-  const { addToCart, toggleFavorite, isFavorite } = useStore()
+  const { addToCart, toggleFavorite, isFavorite, settings } = useStore()
   const { toast } = useToast()
   const fav = isFavorite(product.id)
   const discount = discountPercent(product.price, product.oldPrice)
@@ -126,7 +126,10 @@ export function ProductCard({ product }: { product: Product }) {
             </button>
           )}
           <a
-            href={waLink(`Hola! Quiero consultar por el producto "${product.name}" (${product.presentation}).`)}
+            href={waLink(
+              `Hola! Quiero consultar por el producto "${product.name}" (${product.presentation}).`,
+              settings.whatsappNumber,
+            )}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Consultar por WhatsApp"

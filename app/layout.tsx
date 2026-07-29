@@ -6,6 +6,7 @@ import { AppShell } from '@/components/app-shell'
 import { StoreProvider } from '@/components/store-provider'
 import { ToastProvider } from '@/components/toast-provider'
 import { BRAND_FULL_NAME } from '@/lib/data'
+import { getPublicStoreSettings } from '@/lib/store-settings-server'
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -43,11 +44,13 @@ export const viewport: Viewport = {
   themeColor: '#174a7e',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const settings = await getPublicStoreSettings()
+
   return (
     <html
       lang="es"
@@ -56,7 +59,7 @@ export default function RootLayout({
     >
       <body className="min-h-dvh" suppressHydrationWarning>
         <ToastProvider>
-          <StoreProvider>
+          <StoreProvider settings={settings}>
             <AppShell>{children}</AppShell>
           </StoreProvider>
         </ToastProvider>

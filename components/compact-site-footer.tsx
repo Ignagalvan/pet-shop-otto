@@ -1,7 +1,11 @@
+'use client'
+
 import Link from 'next/link'
 import { BRAND_FULL_NAME } from '@/lib/data'
+import { useStore } from '@/components/store-provider'
 
 export function CompactSiteFooter() {
+  const { settings } = useStore()
   return (
     <footer data-footer="compact" className="mt-10 border-t border-border bg-card">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-center sm:flex-row sm:text-left">
@@ -13,12 +17,12 @@ export function CompactSiteFooter() {
             Volver al inicio
           </Link>
           <a
-            href="https://www.instagram.com/pet_shop.otto/"
+            href={`https://www.instagram.com/${settings.instagram}/`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-brand hover:underline"
           >
-            @pet_shop.otto
+            @{settings.instagram}
           </a>
         </div>
       </div>

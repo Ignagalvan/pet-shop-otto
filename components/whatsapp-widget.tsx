@@ -6,6 +6,7 @@ import { MessageCircle, X, Package, ShoppingBag, Sparkles, UserRound } from 'luc
 import { waLink } from '@/lib/whatsapp'
 import { cn } from '@/lib/utils'
 import { BRAND_FULL_NAME } from '@/lib/data'
+import { useStore } from '@/components/store-provider'
 
 const options = [
   { icon: ShoppingBag, label: 'Consultar por un producto', msg: 'Hola! Quiero consultar por un producto.' },
@@ -15,6 +16,7 @@ const options = [
 ]
 
 export function WhatsappWidget() {
+  const { settings } = useStore()
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -37,7 +39,7 @@ export function WhatsappWidget() {
             {options.map((o) => (
               <a
                 key={o.label}
-                href={waLink(o.msg)}
+                href={waLink(o.msg, settings.whatsappNumber)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-secondary"

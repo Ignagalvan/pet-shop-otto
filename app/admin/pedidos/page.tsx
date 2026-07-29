@@ -12,6 +12,7 @@ import {
 import { OrderStatusForm } from '@/components/admin/order-status-form'
 import { formatPrice } from '@/lib/format'
 import { requireStaff } from '@/lib/supabase/staff'
+import { getPublicStoreSettings } from '@/lib/store-settings-server'
 
 export const metadata = { title: 'Administrar pedidos' }
 
@@ -99,6 +100,7 @@ export default async function AdminOrdersPage({
 }) {
   const { estado = 'todos' } = await searchParams
   const { supabase, profile } = await requireStaff()
+  const settings = await getPublicStoreSettings()
 
   if (!profile) {
     return (
@@ -249,7 +251,7 @@ export default async function AdminOrdersPage({
                         {delivery.notes && <p className="mt-1"><strong>Indicaciones:</strong> {delivery.notes}</p>}
                       </div>
                     ) : (
-                      <p className="mt-3 text-sm text-muted-foreground">General Paz 62, Salsipuedes.</p>
+                      <p className="mt-3 text-sm text-muted-foreground">{settings.address}</p>
                     )}
                     <p className="mt-3 text-sm">
                       <strong>Pago:</strong> {paymentLabels[order.payment_method ?? ''] ?? order.payment_method ?? 'Sin definir'}

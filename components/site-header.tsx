@@ -31,18 +31,32 @@ const navLinks = [
   { label: 'Contacto', href: '/contacto' },
 ]
 
-const announcements = [
-  { icon: Truck, text: 'Envíos rápidos y retiro en el local' },
-  { icon: CreditCard, text: 'Pagá online, por transferencia o al recibir' },
-  { icon: Headphones, text: 'Atención personalizada por WhatsApp' },
-]
-
 export function SiteHeader() {
-  const { cartCount, cartAnimationId, favorites, openCart } = useStore()
+  const { cartCount, cartAnimationId, favorites, openCart, settings } = useStore()
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
   const onCartPage = pathname === '/carrito'
   const checkoutFlow = pathname === '/checkout' || pathname === '/pedido-confirmado'
+  const deliveryText =
+    settings.deliveryEnabled && settings.pickupEnabled
+      ? 'Envíos y retiro en el local'
+      : settings.deliveryEnabled
+        ? 'Envíos a domicilio'
+        : 'Retiro gratis en el local'
+  const paymentNames = {
+    link: 'link de pago',
+    transferencia: 'transferencia',
+    entrega: 'pago al recibir',
+    whatsapp: 'WhatsApp',
+  }
+  const announcements = [
+    { icon: Truck, text: deliveryText },
+    {
+      icon: CreditCard,
+      text: `Pagá por ${settings.paymentMethods.map((method) => paymentNames[method]).join(', ')}`,
+    },
+    { icon: Headphones, text: 'Atención personalizada por WhatsApp' },
+  ]
 
   if (checkoutFlow) {
     return (
@@ -110,7 +124,10 @@ export function SiteHeader() {
                 )}
               </Link>
               <a
-                href={waLink('Hola! Quiero hacer una consulta.')}
+                href={waLink(
+                  'Hola! Quiero hacer una consulta.',
+                  settings.whatsappNumber,
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden size-10 items-center justify-center rounded-xl text-success transition-colors hover:bg-success/10 md:flex"

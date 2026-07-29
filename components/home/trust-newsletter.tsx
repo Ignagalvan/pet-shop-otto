@@ -3,17 +3,27 @@
 import { useState } from "react"
 import { Truck, ShieldCheck, RotateCcw, Headphones, Send } from "lucide-react"
 import { useToast } from "../toast-provider"
-
-const trust = [
-  { icon: Truck, title: "Envíos rápidos", text: "A todo el país y retiro en el local." },
-  { icon: ShieldCheck, title: "Compra segura", text: "Pagos protegidos y datos cuidados." },
-  { icon: RotateCcw, title: "Cambios fáciles", text: "Hasta 30 días para cambiar productos." },
-  { icon: Headphones, title: "Atención humana", text: "Te asesoramos por WhatsApp." },
-]
+import { useStore } from "@/components/store-provider"
 
 export function TrustNewsletter({ brands }: { brands: string[] }) {
   const { toast } = useToast()
+  const { settings } = useStore()
   const [email, setEmail] = useState("")
+  const trust = [
+    {
+      icon: Truck,
+      title: settings.deliveryEnabled ? "Envíos configurados" : "Retiro en el local",
+      text:
+        settings.deliveryEnabled && settings.pickupEnabled
+          ? "Elegí envío o retiro al comprar."
+          : settings.deliveryEnabled
+            ? "Recibí tu compra a domicilio."
+            : "Retirá tu compra sin costo.",
+    },
+    { icon: ShieldCheck, title: "Compra segura", text: "Pagos protegidos y datos cuidados." },
+    { icon: RotateCcw, title: "Cambios fáciles", text: "Te ayudamos a resolver cada caso." },
+    { icon: Headphones, title: "Atención humana", text: "Te asesoramos por WhatsApp." },
+  ]
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

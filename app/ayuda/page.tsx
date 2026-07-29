@@ -3,18 +3,57 @@ import Link from 'next/link'
 import { CreditCard, HelpCircle, MessageCircle, PackageCheck, RefreshCcw, ShieldCheck, Truck } from 'lucide-react'
 import { PageHero } from '@/components/page-hero'
 import { waLink } from '@/lib/whatsapp'
+import { getPublicStoreSettings } from '@/lib/store-settings-server'
+import { formatPrice } from '@/lib/format'
 
 export const metadata: Metadata = { title: 'Ayuda' }
 
 const faqs = [
   { q: '¿Cómo sé si mi pedido fue confirmado?', a: 'Al finalizar recibís un número de pedido. Luego el equipo confirma stock, entrega y pago por WhatsApp.' },
-  { q: '¿Puedo pagar cuando recibo?', a: 'Sí. Podés elegir pago adelantado, link de pago, transferencia o pago al momento de la entrega, según la zona.' },
   { q: '¿Cómo funcionan los productos a pedido?', a: 'Primero cotizamos precio y plazo. Si aceptás, puede solicitarse una seña para iniciar el encargo.' },
-  { q: '¿Puedo retirar en el local?', a: 'Sí. Te avisamos cuando el pedido esté listo y coordinamos un horario de retiro.' },
   { q: '¿Qué pasa si un producto no tiene stock?', a: 'Podés solicitar que te avisemos cuando ingrese o consultarnos por una alternativa similar.' },
 ]
 
-export default function HelpPage() {
+export default async function HelpPage() {
+  const settings = await getPublicStoreSettings()
+  const deliverySteps = [
+    ...(settings.deliveryEnabled
+      ? [
+          `Envío a domicilio por ${formatPrice(settings.shippingCost)}.`,
+          ...(settings.freeShippingThreshold
+            ? [`Envío gratis desde ${formatPrice(settings.freeShippingThreshold)}.`]
+            : []),
+        ]
+      : []),
+    ...(settings.pickupEnabled
+      ? ['Retiro sin cargo en el local, previa confirmación.']
+      : []),
+    'Los plazos se coordinan al confirmar el pedido.',
+  ]
+  const paymentSteps = settings.paymentMethods.map((method) => ({
+    link: 'Link de pago con tarjeta.',
+    transferencia: 'Transferencia bancaria.',
+    entrega: 'Pago al recibir.',
+    whatsapp: 'Pago coordinado por WhatsApp.',
+  })[method])
+  const currentFaqs = [
+    ...faqs,
+    {
+      q: '¿Qué formas de pago están disponibles?',
+      a: `Al finalizar vas a poder elegir entre: ${paymentSteps
+        .map((step) => step.replace(/\.$/, '').toLowerCase())
+        .join(', ')}.`,
+    },
+    {
+      q: '¿Cómo puedo recibir mi compra?',
+      a:
+        settings.deliveryEnabled && settings.pickupEnabled
+          ? 'Podés elegir envío a domicilio o retiro sin cargo en el local.'
+          : settings.deliveryEnabled
+            ? 'Actualmente está disponible el envío a domicilio.'
+            : 'Actualmente está disponible el retiro sin cargo en el local.',
+    },
+  ]
   return (
     <>
       <PageHero eyebrow="Centro de ayuda" title="¿Cómo podemos ayudarte?" description="Todo lo importante sobre compras, pagos, entregas y cambios, explicado de forma simple." />
@@ -29,8 +68,8 @@ export default function HelpPage() {
         <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_340px]">
           <div className="space-y-8">
             <Guide id="compra" icon={PackageCheck} title="Cómo comprar" steps={['Elegí un producto y su presentación.', 'Agregalo al carrito y revisá las cantidades.', 'Completá tus datos, entrega y forma de pago.', 'Recibí la confirmación final por WhatsApp.']} />
-            <Guide id="envios" icon={Truck} title="Envíos y retiro" steps={['Envío a domicilio con costo según ubicación.', 'Envío gratis desde el monto indicado en la tienda.', 'Retiro sin cargo en el local, previa confirmación.', 'Los plazos se coordinan al confirmar el pedido.']} />
-            <Guide id="pagos" icon={CreditCard} title="Formas de pago" steps={['Link de pago con tarjeta.', 'Transferencia bancaria.', 'Pago al recibir, cuando esté disponible.', 'Los productos a pedido pueden requerir seña.']} />
+            <Guide id="envios" icon={Truck} title="Envíos y retiro" steps={deliverySteps} />
+            <Guide id="pagos" icon={CreditCard} title="Formas de pago" steps={[...paymentSteps, 'Los productos a pedido pueden requerir seña.']} />
             <Guide id="cambios" icon={RefreshCcw} title="Cambios y devoluciones" steps={['Conservá el producto sin uso y en su empaque.', 'Escribinos con el número de pedido.', 'Revisamos el caso y coordinamos el cambio.', 'Alimentos abiertos y productos de higiene pueden tener restricciones.']} />
             <section id="privacidad" className="scroll-mt-40 rounded-3xl border border-border bg-card p-6 sm:p-8">
               <h2 className="flex items-center gap-3 text-2xl font-extrabold"><ShieldCheck className="size-6 text-brand" /> Privacidad</h2>
@@ -41,7 +80,7 @@ export default function HelpPage() {
             <HelpCircle className="size-8" />
             <h2 className="mt-4 text-2xl font-extrabold">¿No encontraste la respuesta?</h2>
             <p className="mt-3 text-sm leading-6 text-white/75">Escribinos y te ayudamos a resolverlo personalmente.</p>
-            <a href={waLink('Hola Pet Shop Otto, necesito ayuda con una consulta.')} target="_blank" rel="noreferrer" className="mt-6 flex h-12 items-center justify-center gap-2 rounded-xl bg-white text-sm font-bold text-brand"><MessageCircle className="size-4" /> Hablar por WhatsApp</a>
+            <a href={waLink('Hola Pet Shop Otto, necesito ayuda con una consulta.', settings.whatsappNumber)} target="_blank" rel="noreferrer" className="mt-6 flex h-12 items-center justify-center gap-2 rounded-xl bg-white text-sm font-bold text-brand"><MessageCircle className="size-4" /> Hablar por WhatsApp</a>
             <Link href="/contacto" className="mt-3 flex h-11 items-center justify-center rounded-xl border border-white/25 text-sm font-bold">Ir a contacto</Link>
           </aside>
         </div>
@@ -49,7 +88,7 @@ export default function HelpPage() {
         <section id="faq" className="mt-12 scroll-mt-40">
           <h2 className="text-2xl font-extrabold">Preguntas frecuentes</h2>
           <div className="mt-5 divide-y divide-border overflow-hidden rounded-3xl border border-border bg-card">
-            {faqs.map((faq) => <details key={faq.q} className="group p-5 open:bg-secondary/25"><summary className="cursor-pointer list-none pr-8 font-extrabold marker:hidden">{faq.q}<span className="float-right text-brand transition-transform group-open:rotate-45">+</span></summary><p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{faq.a}</p></details>)}
+            {currentFaqs.map((faq) => <details key={faq.q} className="group p-5 open:bg-secondary/25"><summary className="cursor-pointer list-none pr-8 font-extrabold marker:hidden">{faq.q}<span className="float-right text-brand transition-transform group-open:rotate-45">+</span></summary><p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{faq.a}</p></details>)}
           </div>
         </section>
       </div>

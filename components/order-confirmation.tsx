@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle2, MessageCircle, PackageCheck } from 'lucide-react'
 import { waLink } from '@/lib/whatsapp'
+import { useStore } from '@/components/store-provider'
 
 export function OrderConfirmation() {
+  const { settings } = useStore()
   const search = useSearchParams()
   const number = search.get('numero') ?? 'OTTO-DEMO'
   const sentToWhatsapp = search.get('whatsapp') === '1'
@@ -13,7 +15,10 @@ export function OrderConfirmation() {
   function openWhatsapp() {
     const orderMessage = sessionStorage.getItem('otto-last-order-message')
     window.open(
-      waLink(orderMessage || `Hola, quisiera consultar por mi pedido ${number}.`),
+      waLink(
+        orderMessage || `Hola, quisiera consultar por mi pedido ${number}.`,
+        settings.whatsappNumber,
+      ),
       '_blank',
       'noopener,noreferrer',
     )

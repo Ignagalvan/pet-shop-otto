@@ -6,8 +6,6 @@ import { X, Plus, Minus, Trash2, ShoppingCart, Truck } from 'lucide-react'
 import { useStore } from './store-provider'
 import { formatPrice } from '@/lib/format'
 
-const FREE_SHIPPING = 40000
-
 export function CartDrawer() {
   const {
     items,
@@ -17,11 +15,17 @@ export function CartDrawer() {
     removeFromCart,
     subtotal,
     cartCount,
+    settings,
   } = useStore()
 
   const active = items.filter((i) => !i.savedForLater)
-  const remaining = Math.max(0, FREE_SHIPPING - subtotal)
-  const progress = Math.min(100, (subtotal / FREE_SHIPPING) * 100)
+  const freeShipping = settings.freeShippingThreshold
+  const remaining = freeShipping
+    ? Math.max(0, freeShipping - subtotal)
+    : null
+  const progress = freeShipping
+    ? Math.min(100, (subtotal / freeShipping) * 100)
+    : 0
 
   if (!isCartOpen) return null
 
@@ -72,8 +76,9 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
-            <div className="border-b border-border bg-secondary/50 px-4 py-3">
-              {remaining > 0 ? (
+            {settings.deliveryEnabled && freeShipping && (
+              <div className="border-b border-border bg-secondary/50 px-4 py-3">
+              {remaining !== null && remaining > 0 ? (
                 <p className="text-xs font-medium text-foreground">
                   El envío es pago. Agregá <span className="font-bold text-brand">{formatPrice(remaining)}</span>{' '}
                   más y pasa a ser gratis.
@@ -89,7 +94,8 @@ export function CartDrawer() {
                   style={{ width: `${progress}%` }}
                 />
               </div>
-            </div>
+              </div>
+            )}
 
             <ul className="flex-1 divide-y divide-border overflow-y-auto px-4">
               {active.map((item) => (

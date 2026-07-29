@@ -3,21 +3,24 @@
 import { Clock3, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getBusinessStatus } from '@/lib/business-hours'
+import { useStore } from '@/components/store-provider'
 
 type StoreStatus = ReturnType<typeof getBusinessStatus>
 
 export function ClosedStoreNotice() {
+  const { settings } = useStore()
   const [status, setStatus] = useState<StoreStatus | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    const updateStatus = () => setStatus(getBusinessStatus())
+    const updateStatus = () =>
+      setStatus(getBusinessStatus(settings.businessHours))
 
     updateStatus()
     const intervalId = window.setInterval(updateStatus, 60_000)
 
     return () => window.clearInterval(intervalId)
-  }, [])
+  }, [settings.businessHours])
 
   if (!status || status.isOpen || dismissed) return null
 
@@ -33,7 +36,7 @@ export function ClosedStoreNotice() {
         </span>
         <p className="min-w-0 flex-1 text-sm leading-5">
           <strong>El local está cerrado en este momento.</strong>{' '}
-          Podés hacer tu pedido con normalidad y lo vamos a preparar apenas abramos.{' '}
+          {settings.closedStoreMessage}{' '}
           <span className="font-bold">{status.nextOpening}</span>
         </p>
         <button

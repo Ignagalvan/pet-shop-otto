@@ -26,7 +26,7 @@ const links = [
   { href: '/admin/importar', label: 'Importar Excel', icon: FileSpreadsheet },
   { href: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
   { href: '/admin/clientes', label: 'Clientes', icon: Users, disabled: true },
-  { href: '/admin/configuracion', label: 'Configuración', icon: Settings, disabled: true },
+  { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
 ]
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -39,6 +39,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     router.prefetch('/admin/productos')
     router.prefetch('/admin/importar')
     router.prefetch('/admin/pedidos')
+    router.prefetch('/admin/configuracion')
   }, [router])
 
   if (pathname === '/admin/login') return children

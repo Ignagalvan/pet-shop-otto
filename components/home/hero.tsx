@@ -1,14 +1,23 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
 import { HeartHandshake, PawPrint, ShieldCheck, Truck } from 'lucide-react'
-
-const benefits = [
-  { icon: Truck, text: 'Envíos rápidos' },
-  { icon: ShieldCheck, text: 'Compra segura' },
-  { icon: HeartHandshake, text: 'Atención personal' },
-]
+import { useStore } from '@/components/store-provider'
 
 export function Hero() {
+  const { settings } = useStore()
+  const deliveryText =
+    settings.deliveryEnabled && settings.pickupEnabled
+      ? 'Envíos y retiro'
+      : settings.deliveryEnabled
+        ? 'Envíos a domicilio'
+        : 'Retiro en el local'
+  const benefits = [
+    { icon: Truck, text: deliveryText },
+    { icon: ShieldCheck, text: 'Compra segura' },
+    { icon: HeartHandshake, text: 'Atención personal' },
+  ]
   return (
     <section className="relative overflow-hidden bg-brand-light">
       <div className="hero-glow hero-glow-left" aria-hidden="true" />
@@ -33,7 +42,7 @@ export function Hero() {
           </h1>
           <p className="mt-4 max-w-md text-pretty text-base leading-relaxed text-foreground/80 sm:text-lg">
             Alimentos premium, juguetes, higiene y accesorios seleccionados con cariño. Comprá
-            online y coordiná tu envío o retiro en el local.
+            online y elegí entre las opciones de entrega disponibles.
           </p>
           <div className="mt-6">
             <Link

@@ -20,6 +20,10 @@ import { cn } from '@/lib/utils'
 import { waLink } from '@/lib/whatsapp'
 import { buildOrderMessage } from '@/lib/cart-message'
 import { createOrderAction } from '@/app/checkout/actions'
+import {
+  calculateShipping,
+  type PaymentMethod,
+} from '@/lib/store-settings'
 
 const field = 'h-12 min-w-0 w-full rounded-xl border border-border bg-card px-3.5 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15 sm:text-sm'
 const paymentLabels: Record<string, string> = {
@@ -31,15 +35,19 @@ const paymentLabels: Record<string, string> = {
 
 export function CheckoutClient() {
   const router = useRouter()
-  const { items, subtotal, clearCart } = useStore()
+  const { items, subtotal, clearCart, settings } = useStore()
   const active = items.filter((item) => !item.savedForLater)
   const checkoutKey = useRef<string | null>(null)
-  const [delivery, setDelivery] = useState<'envio' | 'retiro'>('envio')
-  const [payment, setPayment] = useState<'link' | 'transferencia' | 'entrega' | 'whatsapp'>('link')
+  const [delivery, setDelivery] = useState<'envio' | 'retiro'>(() =>
+    settings.deliveryEnabled ? 'envio' : 'retiro',
+  )
+  const [payment, setPayment] = useState<PaymentMethod>(
+    () => settings.paymentMethods[0],
+  )
   const [accepted, setAccepted] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [isPending, startTransition] = useTransition()
-  const shipping = delivery === 'retiro' || subtotal >= 40000 ? 0 : 4500
+  const shipping = calculateShipping(subtotal, settings, delivery)
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -121,7 +129,10 @@ export function CheckoutClient() {
       let whatsappOpened = false
 
       if (whatsappWindow) {
-        whatsappWindow.location.href = waLink(message)
+        whatsappWindow.location.href = waLink(
+          message,
+          settings.whatsappNumber,
+        )
         whatsappOpened = true
       }
 
@@ -157,8 +168,12 @@ export function CheckoutClient() {
 
         <FormSection number="2" title="Entrega" description="Elegí cómo querés recibir tu compra.">
           <div className="grid gap-3 md:grid-cols-2">
-            <Choice active={delivery === 'envio'} onClick={() => setDelivery('envio')} icon={Truck} title="Envío a domicilio" detail={subtotal >= 40000 ? 'Gratis por tu compra' : 'Desde $ 4.500'} />
-            <Choice active={delivery === 'retiro'} onClick={() => setDelivery('retiro')} icon={Store} title="Retiro en el local" detail="Gratis · Coordinamos horario" />
+            {settings.deliveryEnabled && (
+              <Choice active={delivery === 'envio'} onClick={() => setDelivery('envio')} icon={Truck} title="Envío a domicilio" detail={shipping === 0 ? 'Gratis por tu compra' : formatPrice(settings.shippingCost)} />
+            )}
+            {settings.pickupEnabled && (
+              <Choice active={delivery === 'retiro'} onClick={() => setDelivery('retiro')} icon={Store} title="Retiro en el local" detail="Gratis · Coordinamos horario" />
+            )}
           </div>
           {delivery === 'envio' && (
             <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-2">
@@ -172,10 +187,10 @@ export function CheckoutClient() {
 
         <FormSection number="3" title="Forma de pago" description="Podés elegir la opción que te resulte más cómoda.">
           <div className="grid gap-3 md:grid-cols-2">
-            <Choice active={payment === 'link'} onClick={() => setPayment('link')} icon={CreditCard} title="Link de pago" detail="Tarjetas y cuotas disponibles" />
-            <Choice active={payment === 'transferencia'} onClick={() => setPayment('transferencia')} icon={Banknote} title="Transferencia" detail="Te enviamos los datos" />
-            <Choice active={payment === 'entrega'} onClick={() => setPayment('entrega')} icon={MapPin} title="Pago al recibir" detail="Efectivo o transferencia" />
-            <Choice active={payment === 'whatsapp'} onClick={() => setPayment('whatsapp')} icon={MessageCircle} title="Coordinar por WhatsApp" detail="Atención personalizada" />
+            {settings.paymentMethods.includes('link') && <Choice active={payment === 'link'} onClick={() => setPayment('link')} icon={CreditCard} title="Link de pago" detail="Tarjetas y cuotas disponibles" />}
+            {settings.paymentMethods.includes('transferencia') && <Choice active={payment === 'transferencia'} onClick={() => setPayment('transferencia')} icon={Banknote} title="Transferencia" detail="Te enviamos los datos" />}
+            {settings.paymentMethods.includes('entrega') && <Choice active={payment === 'entrega'} onClick={() => setPayment('entrega')} icon={MapPin} title="Pago al recibir" detail="Efectivo o transferencia" />}
+            {settings.paymentMethods.includes('whatsapp') && <Choice active={payment === 'whatsapp'} onClick={() => setPayment('whatsapp')} icon={MessageCircle} title="Coordinar por WhatsApp" detail="Atención personalizada" />}
           </div>
         </FormSection>
       </div>

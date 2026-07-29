@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react'
 import type { Product } from '@/lib/types'
+import type { StoreSettings } from '@/lib/store-settings'
 import { useToast } from './toast-provider'
 
 export interface CartItem {
@@ -22,6 +23,7 @@ export interface CartItem {
 }
 
 interface StoreContextValue {
+  settings: StoreSettings
   items: CartItem[]
   favorites: string[]
   cartCount: number
@@ -56,7 +58,13 @@ export function useStore() {
   return ctx
 }
 
-export function StoreProvider({ children }: { children: React.ReactNode }) {
+export function StoreProvider({
+  children,
+  settings,
+}: {
+  children: React.ReactNode
+  settings: StoreSettings
+}) {
   const [items, setItems] = useState<CartItem[]>([])
   const [favorites, setFavorites] = useState<string[]>([])
   const [cartAnimationId, setCartAnimationId] = useState(0)
@@ -137,6 +145,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<StoreContextValue>(
     () => ({
+      settings,
       items,
       favorites,
       cartCount,
@@ -169,6 +178,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearCart,
       toggleFavorite,
       isFavorite,
+      settings,
     ],
   )
 

@@ -17,7 +17,7 @@ import { FavoriteButton } from './favorite-button'
 
 export function ProductDetailClient({ product, related }: { product: Product; related: Product[] }) {
   const router = useRouter()
-  const { addToCart, toggleFavorite, isFavorite } = useStore()
+  const { addToCart, toggleFavorite, isFavorite, settings } = useStore()
   const defaultVariant = product.variants?.find((variant) => variant.price === product.price) ?? product.variants?.[0]
   const [variantId, setVariantId] = useState(defaultVariant?.id)
   const [quantity, setQuantity] = useState(1)
@@ -109,7 +109,7 @@ export function ProductDetailClient({ product, related }: { product: Product; re
                 <button onClick={() => setQuantity((value) => value + 1)} className="flex size-11 items-center justify-center" aria-label="Sumar cantidad"><Plus className="size-4" /></button>
               </div>
               {unavailable ? (
-                <a href={waLink(`Hola, quiero saber cuándo vuelve a ingresar ${product.name}.`)} target="_blank" rel="noreferrer" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-white"><MessageCircle className="size-5" /> Consultar disponibilidad</a>
+                <a href={waLink(`Hola, quiero saber cuándo vuelve a ingresar ${product.name}.`, settings.whatsappNumber)} target="_blank" rel="noreferrer" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-white"><MessageCircle className="size-5" /> Consultar disponibilidad</a>
               ) : ordered ? (
                 <Link href={`/pedidos-especiales?producto=${encodeURIComponent(product.name)}`} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brown px-4 text-sm font-bold text-white"><MessageCircle className="size-5" /> Encargar producto</Link>
               ) : (
@@ -123,8 +123,8 @@ export function ProductDetailClient({ product, related }: { product: Product; re
             )}
 
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
-              <Info icon={Truck} title="Envío o retiro" text="Coordinamos la opción más cómoda." />
-              <Info icon={ShieldCheck} title="Compra segura" text="Pagá online, por transferencia o al recibir." />
+              <Info icon={Truck} title="Entrega" text={settings.deliveryEnabled && settings.pickupEnabled ? 'Elegí envío o retiro en el local.' : settings.deliveryEnabled ? 'Disponible con envío a domicilio.' : 'Disponible para retiro en el local.'} />
+              <Info icon={ShieldCheck} title="Compra segura" text="Elegí entre los medios de pago habilitados." />
             </div>
           </section>
         </div>
