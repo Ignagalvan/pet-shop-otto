@@ -7,9 +7,9 @@ export const metadata = { title: 'Acceso al panel' }
 export default async function AdminLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>
+  searchParams: Promise<{ next?: string; motivo?: string }>
 }) {
-  const { next } = await searchParams
+  const { next, motivo } = await searchParams
 
   if (!isSupabaseConfigured()) {
     return (
@@ -35,6 +35,11 @@ export default async function AdminLoginPage({
         <p className="mt-2 text-sm text-muted-foreground">
           Acceso privado para administrar productos, precios y stock.
         </p>
+        {motivo === 'nuevo-dia' && (
+          <p className="mt-4 rounded-xl bg-primary/8 p-3 text-sm font-semibold leading-5 text-primary">
+            Comenzó una nueva jornada. Ingresá nuevamente para proteger el panel.
+          </p>
+        )}
         <AdminLoginForm nextPath={next} />
       </div>
     </main>

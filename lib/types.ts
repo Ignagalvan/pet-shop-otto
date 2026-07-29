@@ -41,6 +41,8 @@ export interface Review {
 
 export interface Product {
   id: string
+  defaultVariantId?: string
+  defaultSaleMode?: 'package' | 'kg'
   slug: string
   name: string
   brand: string

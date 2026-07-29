@@ -1,67 +1,135 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Banknote, CreditCard, MapPin, MessageCircle, Store, Truck } from 'lucide-react'
+import {
+  AlertCircle,
+  Banknote,
+  CreditCard,
+  LoaderCircle,
+  MapPin,
+  MessageCircle,
+  Store,
+  Truck,
+} from 'lucide-react'
 import { useStore } from './store-provider'
 import { formatPrice } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { waLink } from '@/lib/whatsapp'
 import { buildOrderMessage } from '@/lib/cart-message'
+import { createOrderAction } from '@/app/checkout/actions'
 
 const field = 'h-12 min-w-0 w-full rounded-xl border border-border bg-card px-3.5 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15 sm:text-sm'
+const paymentLabels: Record<string, string> = {
+  link: 'Link de pago con tarjeta',
+  transferencia: 'Transferencia bancaria',
+  entrega: 'Pago al recibir',
+  whatsapp: 'Coordinar pago por WhatsApp',
+}
 
 export function CheckoutClient() {
   const router = useRouter()
   const { items, subtotal, clearCart } = useStore()
   const active = items.filter((item) => !item.savedForLater)
+  const checkoutKey = useRef<string | null>(null)
   const [delivery, setDelivery] = useState<'envio' | 'retiro'>('envio')
-  const [payment, setPayment] = useState('link')
+  const [payment, setPayment] = useState<'link' | 'transferencia' | 'entrega' | 'whatsapp'>('link')
   const [accepted, setAccepted] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [isPending, startTransition] = useTransition()
   const shipping = delivery === 'retiro' || subtotal >= 40000 ? 0 : 4500
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!active.length || !accepted) return
-    const number = `OTTO-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 5).toUpperCase()}`
+    if (!active.length || !accepted || isPending) return
+
     const form = new FormData(event.currentTarget)
     const read = (name: string) => String(form.get(name) ?? '').trim()
-    const paymentLabels: Record<string, string> = {
-      link: 'Link de pago con tarjeta',
-      transferencia: 'Transferencia bancaria',
-      entrega: 'Pago al recibir',
-      whatsapp: 'Coordinar pago por WhatsApp',
+    const customer = {
+      name: read('name'),
+      phone: read('phone'),
+      email: read('email'),
+      pet: read('pet') || undefined,
     }
-    const message = buildOrderMessage(active, {
-      orderNumber: number,
-      customer: {
-        name: read('name'),
-        phone: read('phone'),
-        email: read('email'),
-        pet: read('pet'),
-      },
-      delivery: {
-        type: delivery,
-        address: read('address'),
-        city: read('city'),
-        postalCode: read('postalCode'),
-        notes: read('notes'),
-      },
-      payment: paymentLabels[payment] ?? payment,
-      subtotal,
-      shipping,
-      total: subtotal + shipping,
+    const deliveryData = {
+      type: delivery,
+      address: read('address') || undefined,
+      city: read('city') || undefined,
+      postalCode: read('postalCode') || undefined,
+      notes: read('notes') || undefined,
+    }
+    const orderItems = active.flatMap((item) => {
+      if (!item.variantId) return []
+      const isKg = item.saleMode === 'kg' || item.variantId.endsWith(':kg')
+      return [{
+        variantId: item.variantId.replace(/:kg$/, ''),
+        mode: isKg ? 'kg' as const : 'package' as const,
+        quantity: item.quantity,
+      }]
     })
 
-    const whatsappLink = document.createElement('a')
-    whatsappLink.href = waLink(message)
-    whatsappLink.target = '_blank'
-    whatsappLink.rel = 'noopener noreferrer'
-    whatsappLink.click()
-    clearCart()
-    router.push(`/pedido-confirmado?numero=${number}&pago=${payment}&whatsapp=1`)
+    if (orderItems.length !== active.length) {
+      setSubmitError('Actualizá la página y volvé a agregar los productos al carrito.')
+      return
+    }
+
+    setSubmitError('')
+    checkoutKey.current ??= crypto.randomUUID()
+
+    const whatsappWindow = window.open('about:blank', '_blank')
+    if (whatsappWindow) {
+      whatsappWindow.opener = null
+      whatsappWindow.document.title = 'Preparando pedido…'
+      whatsappWindow.document.body.textContent = 'Estamos preparando tu pedido para WhatsApp…'
+    }
+
+    startTransition(async () => {
+      let result
+      try {
+        result = await createOrderAction({
+          checkoutKey: checkoutKey.current!,
+          customer,
+          delivery: deliveryData,
+          paymentMethod: payment,
+          items: orderItems,
+        })
+      } catch {
+        whatsappWindow?.close()
+        setSubmitError('No pudimos conectarnos para registrar el pedido. Intentá nuevamente.')
+        return
+      }
+
+      if (!result.ok) {
+        whatsappWindow?.close()
+        setSubmitError(result.error)
+        return
+      }
+
+      const message = buildOrderMessage(active, {
+        orderNumber: result.order.orderNumber,
+        customer,
+        delivery: deliveryData,
+        payment: paymentLabels[payment],
+        subtotal: result.order.subtotal,
+        shipping: result.order.shipping,
+        total: result.order.total,
+      })
+
+      sessionStorage.setItem('otto-last-order-message', message)
+      let whatsappOpened = false
+
+      if (whatsappWindow) {
+        whatsappWindow.location.href = waLink(message)
+        whatsappOpened = true
+      }
+
+      clearCart()
+      router.push(
+        `/pedido-confirmado?numero=${encodeURIComponent(result.order.orderNumber)}&whatsapp=${whatsappOpened ? '1' : '0'}`,
+      )
+    })
   }
 
   if (!active.length) {
@@ -134,7 +202,19 @@ export function CheckoutClient() {
           <input required checked={accepted} onChange={(event) => setAccepted(event.target.checked)} type="checkbox" className="mt-1 size-4 accent-brand" />
           Confirmo que los datos son correctos y acepto las condiciones de compra.
         </label>
-        <button disabled={!accepted} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-success px-3 py-3 text-center text-sm font-extrabold leading-5 text-white disabled:cursor-not-allowed disabled:opacity-50"><MessageCircle className="size-4 shrink-0" /> Confirmar y enviar pedido por WhatsApp</button>
+        {submitError && (
+          <div
+            role="alert"
+            className="mt-5 flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm font-semibold leading-5 text-destructive"
+          >
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
+            {submitError}
+          </div>
+        )}
+        <button disabled={!accepted || isPending} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-success px-3 py-3 text-center text-sm font-extrabold leading-5 text-white disabled:cursor-not-allowed disabled:opacity-50">
+          {isPending ? <LoaderCircle className="size-4 shrink-0 animate-spin" /> : <MessageCircle className="size-4 shrink-0" />}
+          {isPending ? 'Registrando pedido…' : 'Confirmar y enviar pedido por WhatsApp'}
+        </button>
         <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">Se abrirá WhatsApp con la orden completa. Solo tenés que tocar “Enviar”.</p>
       </aside>
     </form>

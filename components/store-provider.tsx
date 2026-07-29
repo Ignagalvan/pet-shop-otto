@@ -15,6 +15,7 @@ export interface CartItem {
   product: Product
   variantId?: string
   variantLabel?: string
+  saleMode?: 'package' | 'kg'
   unitPrice: number
   quantity: number
   savedForLater?: boolean
@@ -31,7 +32,13 @@ interface StoreContextValue {
   closeCart: () => void
   addToCart: (
     product: Product,
-    opts?: { variantId?: string; variantLabel?: string; unitPrice?: number; quantity?: number },
+    opts?: {
+      variantId?: string
+      variantLabel?: string
+      saleMode?: 'package' | 'kg'
+      unitPrice?: number
+      quantity?: number
+    },
   ) => void
   removeFromCart: (key: string) => void
   updateQuantity: (key: string, quantity: number) => void
@@ -61,7 +68,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = useCallback<StoreContextValue['addToCart']>(
     (product, opts = {}) => {
-      const { variantId, variantLabel, unitPrice, quantity = 1 } = opts
+      const {
+        variantId = product.defaultVariantId,
+        variantLabel,
+        saleMode = product.defaultSaleMode,
+        unitPrice,
+        quantity = 1,
+      } = opts
       const key = product.id + (variantId ? '::' + variantId : '')
       setItems((prev) => {
         const existing = prev.find((i) => i.key === key && !i.savedForLater)
@@ -77,6 +90,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             product,
             variantId,
             variantLabel,
+            saleMode,
             unitPrice: unitPrice ?? product.price,
             quantity,
           },

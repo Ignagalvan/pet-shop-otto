@@ -32,6 +32,7 @@ export function ProductDetailClient({ product, related }: { product: Product; re
     addToCart(product, {
       variantId: selected?.id,
       variantLabel: selected?.label,
+      saleMode: selected?.mode,
       unitPrice: price,
       quantity,
     })

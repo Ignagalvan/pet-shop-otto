@@ -10,6 +10,15 @@ export function OrderConfirmation() {
   const number = search.get('numero') ?? 'OTTO-DEMO'
   const sentToWhatsapp = search.get('whatsapp') === '1'
 
+  function openWhatsapp() {
+    const orderMessage = sessionStorage.getItem('otto-last-order-message')
+    window.open(
+      waLink(orderMessage || `Hola, quisiera consultar por mi pedido ${number}.`),
+      '_blank',
+      'noopener,noreferrer',
+    )
+  }
+
   return (
     <section className="mx-auto max-w-2xl px-4 py-16 text-center sm:py-24">
       <span className="mx-auto flex size-24 items-center justify-center rounded-full bg-success/10 text-success"><CheckCircle2 className="size-12" /></span>
@@ -31,7 +40,14 @@ export function OrderConfirmation() {
       </div>
       <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
         <Link href="/productos" className="flex h-12 items-center justify-center rounded-xl bg-brand px-6 text-sm font-bold text-white">Seguir comprando</Link>
-        <a href={waLink(`Hola, quisiera consultar por mi pedido ${number}.`)} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 px-6 text-sm font-bold text-success"><MessageCircle className="size-4" /> Consultar por WhatsApp</a>
+        <button
+          type="button"
+          onClick={openWhatsapp}
+          className="flex h-12 items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 px-6 text-sm font-bold text-success"
+        >
+          <MessageCircle className="size-4" />
+          {sentToWhatsapp ? 'Reenviar por WhatsApp' : 'Enviar pedido por WhatsApp'}
+        </button>
       </div>
     </section>
   )

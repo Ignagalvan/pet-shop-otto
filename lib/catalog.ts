@@ -134,6 +134,8 @@ function mapProduct(row: PublicProductRow, baseUrl: string): Product | null {
 
   return {
     id: row.id,
+    defaultVariantId: primary.id,
+    defaultSaleMode: primary.sells_by_package ? 'package' : 'kg',
     slug: row.slug,
     name: row.name,
     brand: brand?.name || 'Pet Shop Otto',

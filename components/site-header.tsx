@@ -133,7 +133,7 @@ export function SiteHeader() {
                   data-cart-target
                   onClick={openCart}
                   className="relative flex h-10 items-center gap-2 rounded-xl bg-brand px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand/90"
-                  aria-label={`Carrito, ${cartCount} productos`}
+                  aria-label={`Carrito, ${cartCount} ${cartCount === 1 ? 'producto' : 'productos'}`}
                 >
                   <ShoppingCart className="size-5" />
                   <span className="hidden sm:inline">Carrito</span>
