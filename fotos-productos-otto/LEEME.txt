@@ -1,0 +1,20 @@
+FOTOS DE PRODUCTOS — PET SHOP OTTO
+
+Las fotografías identificadas y renombradas se encuentran en la carpeta "listas".
+El archivo CORRESPONDENCIAS.csv indica a qué fila o filas del Excel corresponde
+cada imagen.
+
+Después de revisarlas, se renombrarán con este formato:
+
+MARCA - PRODUCTO O VARIEDAD - PESO
+
+Ejemplo:
+AGILITY - GATO URINARY - 10 KG.webp
+
+Si una misma presentación visual corresponde a distintos pesos, se conserva una
+sola foto principal y se registra su relación con todos los productos aplicables.
+
+Lote recibido el 29/07/2026:
+- 14 archivos recibidos.
+- 13 imágenes únicas.
+- 1 duplicado exacto de Agility Gato Urinary descartado.

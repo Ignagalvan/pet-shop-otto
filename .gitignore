@@ -5,6 +5,7 @@ __v0_jsx-dev-runtime.ts
 .snowflake/
 .v0-trash/
 .vercel/
+supabase/.temp/
 
 # Environment variables
 .env*.local
@@ -13,5 +14,9 @@ __v0_jsx-dev-runtime.ts
 node_modules
 .next/
 .tmp/
+.codex-runtime/
 *.tsbuildinfo
 .DS_Store
+
+# Local Netlify folder
+.netlify

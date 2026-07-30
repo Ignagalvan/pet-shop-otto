@@ -2,18 +2,11 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Nunito, Poppins } from 'next/font/google'
 import './globals.css'
+import { AppShell } from '@/components/app-shell'
 import { StoreProvider } from '@/components/store-provider'
 import { ToastProvider } from '@/components/toast-provider'
-import { SiteHeader } from '@/components/site-header'
-import { SiteFooter } from '@/components/site-footer'
-import { SiteFooterVisibility } from '@/components/site-footer-visibility'
-import { CompactSiteFooter } from '@/components/compact-site-footer'
-import { MobileTabBar } from '@/components/mobile-tab-bar'
-import { WhatsappWidget } from '@/components/whatsapp-widget'
-import { CartDrawer } from '@/components/cart-drawer'
-import { ClosedStoreNotice } from '@/components/closed-store-notice'
 import { BRAND_FULL_NAME } from '@/lib/data'
-import { PawEntrySplash } from '@/components/paw-entry-splash'
+import { getPublicStoreSettings } from '@/lib/store-settings-server'
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -51,29 +44,23 @@ export const viewport: Viewport = {
   themeColor: '#174a7e',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const settings = await getPublicStoreSettings()
+
   return (
-    <html lang="es" className={`${nunito.variable} ${poppins.variable} bg-background`}>
-      <body className="min-h-dvh">
-        <PawEntrySplash />
+    <html
+      lang="es"
+      data-scroll-behavior="smooth"
+      className={`${nunito.variable} ${poppins.variable} bg-background`}
+    >
+      <body className="min-h-dvh" suppressHydrationWarning>
         <ToastProvider>
-          <StoreProvider>
-            <div className="flex min-h-dvh flex-col">
-              <SiteHeader />
-              <ClosedStoreNotice />
-              <main className="flex-1 pb-16 md:pb-0">{children}</main>
-              <SiteFooterVisibility
-                full={<SiteFooter />}
-                compact={<CompactSiteFooter />}
-              />
-            </div>
-            <MobileTabBar />
-            <WhatsappWidget />
-            <CartDrawer />
+          <StoreProvider settings={settings}>
+            <AppShell>{children}</AppShell>
           </StoreProvider>
         </ToastProvider>
         {process.env.VERCEL === '1' && <Analytics />}

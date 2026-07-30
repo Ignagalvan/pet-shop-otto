@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { Heart } from 'lucide-react'
-import { products } from '@/lib/data'
+import type { Product } from '@/lib/types'
 import { useStore } from './store-provider'
 import { ProductCard } from './product-card'
 
-export function FavoritesClient() {
+export function FavoritesClient({ products }: { products: Product[] }) {
   const { favorites } = useStore()
   const selected = products.filter((product) => favorites.includes(product.id))
 

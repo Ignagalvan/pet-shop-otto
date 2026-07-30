@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   Menu,
   X,
-  User,
   MessageCircle,
   Truck,
   CreditCard,
@@ -31,18 +30,31 @@ const navLinks = [
   { label: 'Contacto', href: '/contacto' },
 ]
 
-const announcements = [
-  { icon: Truck, text: 'Envíos rápidos y retiro en el local' },
-  { icon: CreditCard, text: 'Pagá online, por transferencia o al recibir' },
-  { icon: Headphones, text: 'Atención personalizada por WhatsApp' },
-]
-
 export function SiteHeader() {
-  const { cartCount, cartAnimationId, favorites, openCart } = useStore()
+  const { cartCount, cartAnimationId, favorites, openCart, settings } = useStore()
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
   const onCartPage = pathname === '/carrito'
   const checkoutFlow = pathname === '/checkout' || pathname === '/pedido-confirmado'
+  const deliveryText =
+    settings.deliveryEnabled && settings.pickupEnabled
+      ? 'Envíos y retiro en el local'
+      : settings.deliveryEnabled
+        ? 'Envíos a domicilio'
+        : 'Retiro gratis en el local'
+  const paymentNames = {
+    local: 'pago en el local',
+    transferencia: 'transferencia',
+    entrega: 'pago al recibir',
+  }
+  const announcements = [
+    { icon: Truck, text: deliveryText },
+    {
+      icon: CreditCard,
+      text: `Pagá por ${settings.paymentMethods.map((method) => paymentNames[method]).join(', ')}`,
+    },
+    { icon: Headphones, text: 'Atención personalizada por WhatsApp' },
+  ]
 
   if (checkoutFlow) {
     return (
@@ -91,13 +103,6 @@ export function SiteHeader() {
 
             <div className="ml-auto flex items-center gap-1 sm:gap-2">
               <Link
-                href="/cuenta"
-                className="hidden size-10 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-secondary sm:flex"
-                aria-label="Mi cuenta"
-              >
-                <User className="size-5.5" />
-              </Link>
-              <Link
                 href="/favoritos"
                 className="relative hidden size-10 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-secondary sm:flex"
                 aria-label="Favoritos"
@@ -110,7 +115,10 @@ export function SiteHeader() {
                 )}
               </Link>
               <a
-                href={waLink('Hola! Quiero hacer una consulta.')}
+                href={waLink(
+                  'Hola! Quiero hacer una consulta.',
+                  settings.whatsappNumber,
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden size-10 items-center justify-center rounded-xl text-success transition-colors hover:bg-success/10 md:flex"
@@ -133,7 +141,7 @@ export function SiteHeader() {
                   data-cart-target
                   onClick={openCart}
                   className="relative flex h-10 items-center gap-2 rounded-xl bg-brand px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand/90"
-                  aria-label={`Carrito, ${cartCount} productos`}
+                  aria-label={`Carrito, ${cartCount} ${cartCount === 1 ? 'producto' : 'productos'}`}
                 >
                   <ShoppingCart className="size-5" />
                   <span className="hidden sm:inline">Carrito</span>
@@ -194,14 +202,7 @@ export function SiteHeader() {
                 </Link>
               ))}
             </nav>
-            <div className="grid grid-cols-2 gap-2 border-t border-border p-3">
-              <Link
-                href="/cuenta"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-              >
-                <User className="size-4" /> Mi cuenta
-              </Link>
+            <div className="border-t border-border p-3">
               <Link
                 href="/favoritos"
                 onClick={() => setMenuOpen(false)}

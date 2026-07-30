@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Filter, PawPrint, SearchX, SlidersHorizontal, X } from 'lucide-react'
 import { ProductCard } from './product-card'
-import { brands, categories, petTypes } from '@/lib/data'
+import type { CatalogOption } from '@/lib/catalog'
 import type { Product } from '@/lib/types'
 
 type InitialFilters = {
@@ -17,10 +17,17 @@ type InitialFilters = {
 export function CatalogClient({
   products,
   initial,
+  options,
 }: {
   products: Product[]
   initial: InitialFilters
+  options: {
+    brands: string[]
+    categories: CatalogOption[]
+    petTypes: CatalogOption[]
+  }
 }) {
+  const { brands, categories, petTypes } = options
   const [pet, setPet] = useState(initial.mascota ?? '')
   const [category, setCategory] = useState(initial.categoria ?? '')
   const [brand, setBrand] = useState(initial.marca ?? '')
@@ -126,7 +133,9 @@ export function CatalogClient({
                 ? `Opciones pensadas para ${selectedPet.label.toLocaleLowerCase('es')}`
                 : 'Todo para cuidar a tu mascota'}
           </p>
-          <p className="mt-1 text-sm font-bold text-foreground">{filtered.length} productos</p>
+          <p className="mt-1 text-sm font-bold text-foreground">
+            {filtered.length} {filtered.length === 1 ? 'producto' : 'productos'}
+          </p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setMobileFilters(true)} className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold lg:hidden">

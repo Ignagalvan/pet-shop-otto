@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react'
 import type { Product } from '@/lib/types'
+import type { StoreSettings } from '@/lib/store-settings'
 import { useToast } from './toast-provider'
 
 export interface CartItem {
@@ -15,12 +16,14 @@ export interface CartItem {
   product: Product
   variantId?: string
   variantLabel?: string
+  saleMode?: 'package' | 'kg'
   unitPrice: number
   quantity: number
   savedForLater?: boolean
 }
 
 interface StoreContextValue {
+  settings: StoreSettings
   items: CartItem[]
   favorites: string[]
   cartCount: number
@@ -31,7 +34,13 @@ interface StoreContextValue {
   closeCart: () => void
   addToCart: (
     product: Product,
-    opts?: { variantId?: string; variantLabel?: string; unitPrice?: number; quantity?: number },
+    opts?: {
+      variantId?: string
+      variantLabel?: string
+      saleMode?: 'package' | 'kg'
+      unitPrice?: number
+      quantity?: number
+    },
   ) => void
   removeFromCart: (key: string) => void
   updateQuantity: (key: string, quantity: number) => void
@@ -49,7 +58,13 @@ export function useStore() {
   return ctx
 }
 
-export function StoreProvider({ children }: { children: React.ReactNode }) {
+export function StoreProvider({
+  children,
+  settings,
+}: {
+  children: React.ReactNode
+  settings: StoreSettings
+}) {
   const [items, setItems] = useState<CartItem[]>([])
   const [favorites, setFavorites] = useState<string[]>([])
   const [cartAnimationId, setCartAnimationId] = useState(0)
@@ -61,7 +76,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = useCallback<StoreContextValue['addToCart']>(
     (product, opts = {}) => {
-      const { variantId, variantLabel, unitPrice, quantity = 1 } = opts
+      const {
+        variantId = product.defaultVariantId,
+        variantLabel,
+        saleMode = product.defaultSaleMode,
+        unitPrice,
+        quantity = 1,
+      } = opts
       const key = product.id + (variantId ? '::' + variantId : '')
       setItems((prev) => {
         const existing = prev.find((i) => i.key === key && !i.savedForLater)
@@ -77,6 +98,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             product,
             variantId,
             variantLabel,
+            saleMode,
             unitPrice: unitPrice ?? product.price,
             quantity,
           },
@@ -123,6 +145,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<StoreContextValue>(
     () => ({
+      settings,
       items,
       favorites,
       cartCount,
@@ -155,6 +178,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearCart,
       toggleFavorite,
       isFavorite,
+      settings,
     ],
   )
 

@@ -43,7 +43,11 @@ export function StockBadge({
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-xs font-semibold', s.text)}>
       <span className={cn('size-2 rounded-full', s.dot)} aria-hidden />
-      {status === 'poco' && count ? `¡Quedan ${count}!` : s.label}
+      {status === 'poco' && count
+        ? count === 1
+          ? '¡Queda 1!'
+          : `¡Quedan ${count}!`
+        : s.label}
     </span>
   )
 }

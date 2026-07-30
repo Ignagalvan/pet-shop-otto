@@ -1,9 +1,13 @@
+'use client'
+
 import Link from 'next/link'
 import { MapPin, Clock, Phone, MessageCircle } from 'lucide-react'
 import { Logo } from './logo'
 import { waLink } from '@/lib/whatsapp'
 import { BRAND_FULL_NAME } from '@/lib/data'
-import { BUSINESS_HOURS } from '@/lib/business-hours'
+import { formatBusinessHours } from '@/lib/business-hours'
+import { useStore } from '@/components/store-provider'
+import { whatsappDisplay } from '@/lib/store-settings'
 
 const columns = [
   {
@@ -17,27 +21,19 @@ const columns = [
     ],
   },
   {
-    title: 'Mi cuenta',
-    links: [
-      { label: 'Ingresar', href: '/cuenta' },
-      { label: 'Mis pedidos', href: '/cuenta/pedidos' },
-      { label: 'Mis mascotas', href: '/cuenta/mascotas' },
-      { label: 'Favoritos', href: '/favoritos' },
-    ],
-  },
-  {
     title: 'Ayuda',
     links: [
       { label: 'Preguntas frecuentes', href: '/ayuda#faq' },
-      { label: 'Políticas de compra', href: '/ayuda#compra' },
-      { label: 'Cambios y devoluciones', href: '/ayuda#cambios' },
+      { label: 'Condiciones de compra', href: '/condiciones' },
       { label: 'Envíos', href: '/ayuda#envios' },
-      { label: 'Privacidad', href: '/ayuda#privacidad' },
+      { label: 'Privacidad', href: '/privacidad' },
     ],
   },
 ]
 
 export function SiteFooter() {
+  const { settings } = useStore()
+  const instagramUrl = `https://www.instagram.com/${settings.instagram}/`
   return (
     <footer data-footer="full" className="mt-16 border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12">
@@ -51,20 +47,23 @@ export function SiteFooter() {
             <ul className="mt-5 space-y-2.5 text-sm text-muted-foreground">
               <li className="flex items-center gap-2.5">
                 <MapPin className="size-4 shrink-0 text-brand" />
-                General Paz 62, Salsipuedes, Córdoba
+                {settings.address}
               </li>
               <li className="flex items-center gap-2.5">
                 <Clock className="size-4 shrink-0 text-brand" />
-                {BUSINESS_HOURS.display}
+                {formatBusinessHours(settings.businessHours)}
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="size-4 shrink-0 text-brand" />
-                WhatsApp a confirmar
+                {whatsappDisplay(settings.whatsappNumber)}
               </li>
             </ul>
             <div className="mt-5 flex items-center gap-2">
               <a
-                href={waLink('Hola! Quiero hacer una consulta.')}
+                href={waLink(
+                  'Hola! Quiero hacer una consulta.',
+                  settings.whatsappNumber,
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex size-10 items-center justify-center rounded-xl bg-success/10 text-success transition-colors hover:bg-success/20"
@@ -73,12 +72,12 @@ export function SiteFooter() {
                 <MessageCircle className="size-5" />
               </a>
               <a
-                href="https://www.instagram.com/pet_shop.otto/"
+                href={instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex size-10 items-center justify-center rounded-xl bg-secondary text-brand transition-colors hover:bg-brand-light"
                 aria-label="Instagram de Pet Shop Otto"
-                title="@pet_shop.otto"
+                title={`@${settings.instagram}`}
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -122,14 +121,21 @@ export function SiteFooter() {
             © {new Date().getFullYear()} {BRAND_FULL_NAME}. Todos los derechos reservados.
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            {['Visa', 'Mastercard', 'Transferencia', 'Efectivo', 'Mercado Pago'].map((m) => (
+            {settings.paymentMethods.map((method) => {
+              const label = {
+                local: 'Pago en el local',
+                transferencia: 'Transferencia',
+                entrega: 'Pago al recibir',
+              }[method]
+              return (
               <span
-                key={m}
+                key={method}
                 className="rounded-md border border-border bg-secondary px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
               >
-                {m}
+                {label}
               </span>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>

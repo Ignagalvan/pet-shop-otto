@@ -5,15 +5,18 @@ import Link from 'next/link'
 import { Bookmark, Minus, Plus, ShoppingCart, Trash2, Truck } from 'lucide-react'
 import { useStore } from './store-provider'
 import { formatPrice } from '@/lib/format'
-
-const FREE_SHIPPING = 40000
+import { calculateShipping } from '@/lib/store-settings'
 
 export function CartPageClient() {
-  const { items, subtotal, removeFromCart, updateQuantity, toggleSaveForLater } = useStore()
+  const { items, subtotal, removeFromCart, updateQuantity, toggleSaveForLater, settings } = useStore()
   const active = items.filter((item) => !item.savedForLater)
   const saved = items.filter((item) => item.savedForLater)
-  const shipping = subtotal >= FREE_SHIPPING ? 0 : 4500
-  const remaining = Math.max(0, FREE_SHIPPING - subtotal)
+  const shipping = settings.deliveryEnabled
+    ? calculateShipping(subtotal, settings)
+    : 0
+  const remaining = settings.freeShippingThreshold
+    ? Math.max(0, settings.freeShippingThreshold - subtotal)
+    : null
 
   if (!active.length && !saved.length) {
     return (
@@ -76,22 +79,26 @@ export function CartPageClient() {
         <h2 className="text-xl font-extrabold">Resumen de compra</h2>
         <div className="mt-5 space-y-3 text-sm">
           <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><strong>{formatPrice(subtotal)}</strong></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Envío estimado</span><strong className={shipping === 0 ? 'text-success' : ''}>{shipping === 0 ? 'Gratis' : formatPrice(shipping)}</strong></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Envío estimado</span><strong className={shipping === 0 ? 'text-success' : ''}>{settings.deliveryEnabled ? (shipping === 0 ? 'Gratis' : formatPrice(shipping)) : 'No disponible'}</strong></div>
         </div>
-        {remaining > 0 ? (
+        {settings.deliveryEnabled && remaining !== null && remaining > 0 ? (
           <div className="mt-5 rounded-xl bg-secondary p-3 text-xs font-semibold leading-5">
             <Truck className="mr-1 inline size-4 text-brand" />
             El envío cuesta {formatPrice(shipping)}. Agregá {formatPrice(remaining)} más y pasa a ser gratis.
           </div>
-        ) : (
+        ) : settings.deliveryEnabled && settings.freeShippingThreshold ? (
           <div className="mt-5 rounded-xl bg-success/10 p-3 text-xs font-bold text-success">
             <Truck className="mr-1 inline size-4" /> Tu compra tiene envío gratis.
           </div>
-        )}
+        ) : null}
         <div className="my-5 border-t border-border" />
         <div className="flex items-baseline justify-between"><span className="font-bold">Total</span><span className="text-2xl font-extrabold">{formatPrice(subtotal + shipping)}</span></div>
         <Link href="/checkout" className="mt-6 flex h-12 items-center justify-center rounded-xl bg-success text-sm font-extrabold text-white transition-colors hover:bg-success/90">Finalizar compra</Link>
-        <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">El costo final de envío se confirma según tu ubicación.</p>
+        <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
+          {settings.deliveryEnabled
+            ? `Envío configurado: ${shipping === 0 ? 'gratis para esta compra' : formatPrice(shipping)}.`
+            : 'Actualmente está disponible únicamente el retiro en el local.'}
+        </p>
       </aside>
     </div>
   )
