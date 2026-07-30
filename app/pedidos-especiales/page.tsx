@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { BadgeCheck, HandCoins, PackageSearch, Truck } from 'lucide-react'
 import { PageHero } from '@/components/page-hero'
 import { SpecialOrderForm } from '@/components/special-order-form'
+import { getPublicStoreSettings } from '@/lib/store-settings-server'
 
 export const metadata: Metadata = { title: 'Productos a pedido' }
 
@@ -12,7 +13,8 @@ const steps = [
   { icon: Truck, title: 'Lo recibís', text: 'Te avisamos cuando llegue para envío o retiro.' },
 ]
 
-export default function SpecialOrdersPage() {
+export default async function SpecialOrdersPage() {
+  const settings = await getPublicStoreSettings()
   return (
     <>
       <PageHero eyebrow="Lo conseguimos para vos" title="Productos a pedido" description="Si no está en el catálogo, contanos qué necesitás. Lo buscamos, te cotizamos y recién entonces decidís." />
@@ -25,7 +27,7 @@ export default function SpecialOrdersPage() {
               {steps.map((step, index) => <article key={step.title} className="flex gap-4 rounded-2xl border border-border bg-card p-4"><span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-brand"><step.icon className="size-5" /></span><div><p className="text-xs font-bold uppercase tracking-wider text-brown">Paso {index + 1}</p><h3 className="font-extrabold">{step.title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{step.text}</p></div></article>)}
             </div>
           </section>
-          <SpecialOrderForm />
+          <SpecialOrderForm whatsappNumber={settings.whatsappNumber} />
         </div>
       </div>
     </>

@@ -34,7 +34,7 @@ export function OrderStatusForm({
         key={status}
         name="status"
         defaultValue={status}
-        disabled={status === 'cancelled' || pending}
+        disabled={pending}
         aria-label="Estado del pedido"
         className="h-10 min-w-40 rounded-xl border bg-background px-3 text-sm font-bold outline-none focus:border-primary"
       >
@@ -46,12 +46,18 @@ export function OrderStatusForm({
         <option value="cancelled">Cancelado</option>
       </select>
       <button
-        disabled={status === 'cancelled' || pending}
+        disabled={pending}
         className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-extrabold text-white disabled:opacity-45"
       >
         {pending ? <LoaderCircle className="size-4 animate-spin" /> : <Save className="size-4" />}
         Guardar
       </button>
+      {status === 'cancelled' && !state.error && !state.ok && (
+        <p className="basis-full text-xs font-bold text-muted-foreground">
+          Podés reactivar el pedido. Antes de guardarlo verificaremos que haya
+          stock disponible.
+        </p>
+      )}
       {state.error && (
         <p role="alert" className="basis-full text-xs font-bold text-destructive">
           {state.error}

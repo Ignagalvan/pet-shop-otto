@@ -14,5 +14,6 @@ supabase/.temp/
 node_modules
 .next/
 .tmp/
+.codex-runtime/
 *.tsbuildinfo
 .DS_Store

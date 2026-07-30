@@ -10,6 +10,10 @@ import {
   UserRound,
 } from 'lucide-react'
 import { OrderStatusForm } from '@/components/admin/order-status-form'
+import {
+  PaymentStatusForm,
+  type PaymentStatus,
+} from '@/components/admin/payment-status-form'
 import { formatPrice } from '@/lib/format'
 import { requireStaff } from '@/lib/supabase/staff'
 import { getPublicStoreSettings } from '@/lib/store-settings-server'
@@ -29,7 +33,7 @@ type AdminOrder = {
   order_number: number
   status: OrderStatus
   payment_method: string | null
-  payment_status: string
+  payment_status: PaymentStatus
   fulfillment_method: string | null
   subtotal: number
   shipping_amount: number
@@ -68,18 +72,47 @@ const statusLabels: Record<OrderStatus, string> = {
 
 const statusStyles: Record<OrderStatus, string> = {
   pending: 'bg-amber-100 text-amber-800',
-  confirmed: 'bg-primary/10 text-primary',
-  preparing: 'bg-brown/10 text-brown',
-  ready: 'bg-success/10 text-success',
-  completed: 'bg-success text-white',
-  cancelled: 'bg-destructive/10 text-destructive',
+  confirmed: 'bg-sky-100 text-sky-800',
+  preparing: 'bg-orange-100 text-orange-800',
+  ready: 'bg-emerald-100 text-emerald-800',
+  completed: 'bg-green-600 text-white',
+  cancelled: 'bg-red-100 text-red-800',
+}
+
+const statusCardStyles: Record<OrderStatus, string> = {
+  pending: 'border-l-amber-400',
+  confirmed: 'border-l-sky-500',
+  preparing: 'border-l-orange-500',
+  ready: 'border-l-emerald-500',
+  completed: 'border-l-green-600',
+  cancelled: 'border-l-red-500',
+}
+
+const statusHeaderStyles: Record<OrderStatus, string> = {
+  pending: 'bg-amber-50/80',
+  confirmed: 'bg-sky-50/80',
+  preparing: 'bg-orange-50/80',
+  ready: 'bg-emerald-50/80',
+  completed: 'bg-green-50/80',
+  cancelled: 'bg-red-50/80',
 }
 
 const paymentLabels: Record<string, string> = {
-  link: 'Link de pago',
+  local: 'Pago en el local',
   transferencia: 'Transferencia',
   entrega: 'Pago al recibir',
-  whatsapp: 'Coordinación por WhatsApp',
+}
+
+const paymentStatusLabels: Record<PaymentStatus, string> = {
+  pending: 'Pendiente',
+  paid: 'Pagado',
+  cancelled: 'Pago cancelado',
+}
+
+const paymentStatusStyles: Record<PaymentStatus, string> = {
+  pending: 'bg-amber-100 text-amber-800',
+  paid: 'bg-success/10 text-success',
+  cancelled: 'bg-destructive/10 text-destructive',
 }
 
 const dateTime = new Intl.DateTimeFormat('es-AR', {
@@ -205,8 +238,13 @@ export default async function AdminOrdersPage({
             const isDelivery = order.fulfillment_method === 'envio'
 
             return (
-              <article key={order.id} className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-                <div className="flex flex-col gap-4 border-b bg-muted/35 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
+              <article
+                key={order.id}
+                className={`overflow-hidden rounded-2xl border border-l-4 bg-white shadow-sm transition-colors duration-300 ${statusCardStyles[order.status]}`}
+              >
+                <div
+                  className={`flex flex-col gap-4 border-b p-4 transition-colors duration-300 sm:flex-row sm:items-start sm:justify-between sm:p-5 ${statusHeaderStyles[order.status]}`}
+                >
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-lg font-extrabold">{displayOrderNumber(order)}</h2>
@@ -253,9 +291,27 @@ export default async function AdminOrdersPage({
                     ) : (
                       <p className="mt-3 text-sm text-muted-foreground">{settings.address}</p>
                     )}
-                    <p className="mt-3 text-sm">
-                      <strong>Pago:</strong> {paymentLabels[order.payment_method ?? ''] ?? order.payment_method ?? 'Sin definir'}
-                    </p>
+                    <div className="mt-3 rounded-xl border bg-background/60 p-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                        Forma de pago
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        <strong className="text-sm">
+                          {paymentLabels[order.payment_method ?? ''] ??
+                            order.payment_method ??
+                            'Sin definir'}
+                        </strong>
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-extrabold ${paymentStatusStyles[order.payment_status]}`}
+                        >
+                          {paymentStatusLabels[order.payment_status]}
+                        </span>
+                      </div>
+                    </div>
+                    <PaymentStatusForm
+                      orderId={order.id}
+                      status={order.payment_status}
+                    />
                   </section>
 
                   <section className="rounded-xl bg-background p-4">

@@ -6,10 +6,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   Boxes,
   FileSpreadsheet,
+  History,
   LayoutDashboard,
   LogOut,
   Menu,
   PackageSearch,
+  PackagePlus,
   Settings,
   ShoppingBag,
   Users,
@@ -17,6 +19,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Logo } from '@/components/logo'
+import { useToast } from '@/components/toast-provider'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -25,22 +28,188 @@ const links = [
   { href: '/admin/productos', label: 'Productos', icon: PackageSearch },
   { href: '/admin/importar', label: 'Importar Excel', icon: FileSpreadsheet },
   { href: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
-  { href: '/admin/clientes', label: 'Clientes', icon: Users, disabled: true },
+  {
+    href: '/admin/pedidos-especiales',
+    label: 'A pedido',
+    icon: PackagePlus,
+  },
+  { href: '/admin/clientes', label: 'Clientes', icon: Users },
+  { href: '/admin/historial', label: 'Historial', icon: History },
   { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
 ]
 
-export function AdminShell({ children }: { children: ReactNode }) {
+type LiveOrder = {
+  id?: string
+  order_number?: number
+  status?: string
+  payment_status?: string
+  created_at?: string
+}
+
+const orderStatusNotifications: Record<
+  string,
+  { label: string; variant: 'success' | 'error' | 'info' | 'warning' }
+> = {
+  pending: { label: 'Nuevo', variant: 'warning' },
+  confirmed: { label: 'Confirmado', variant: 'info' },
+  preparing: { label: 'Preparando', variant: 'warning' },
+  ready: { label: 'Listo para entregar', variant: 'success' },
+  completed: { label: 'Completado', variant: 'success' },
+  cancelled: { label: 'Cancelado', variant: 'error' },
+}
+
+function displayLiveOrderNumber(order: LiveOrder) {
+  if (!order.order_number) return 'nuevo'
+  const year = order.created_at
+    ? new Date(order.created_at).getFullYear()
+    : new Date().getFullYear()
+  return `OTTO-${year}-${String(order.order_number).padStart(6, '0')}`
+}
+
+export function AdminShell({
+  children,
+  initialNewOrderCount,
+}: {
+  children: ReactNode
+  initialNewOrderCount: number
+}) {
   const pathname = usePathname()
   const router = useRouter()
+  const { toast } = useToast()
   const [open, setOpen] = useState(false)
+  const [newOrderCount, setNewOrderCount] = useState(initialNewOrderCount)
+  const [badgeAnimationId, setBadgeAnimationId] = useState(0)
 
   useEffect(() => {
     router.prefetch('/admin')
     router.prefetch('/admin/productos')
     router.prefetch('/admin/importar')
     router.prefetch('/admin/pedidos')
+    router.prefetch('/admin/pedidos-especiales')
+    router.prefetch('/admin/clientes')
+    router.prefetch('/admin/historial')
     router.prefetch('/admin/configuracion')
   }, [router])
+
+  useEffect(() => {
+    if (pathname === '/admin/login') return
+
+    const supabase = createSupabaseBrowserClient()
+
+    async function refreshNewOrderCount() {
+      const { count, error } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending')
+
+      if (!error) setNewOrderCount(count ?? 0)
+    }
+
+    function refreshWhenVisible() {
+      if (document.visibilityState === 'visible') {
+        void refreshNewOrderCount()
+      }
+    }
+
+    function animateOrderBadge() {
+      setBadgeAnimationId((current) => current + 1)
+    }
+
+    void refreshNewOrderCount()
+    const interval = window.setInterval(refreshNewOrderCount, 30_000)
+    window.addEventListener('focus', refreshNewOrderCount)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+
+    let disposed = false
+    let ordersChannel: ReturnType<typeof supabase.channel> | null = null
+
+    async function subscribeToOrders() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (session?.access_token) {
+        await supabase.realtime.setAuth(session.access_token)
+      }
+      if (disposed) return
+
+      ordersChannel = supabase
+        .channel('admin-orders-live')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          const order = payload.new as LiveOrder
+          if (order.status === 'pending') {
+            setNewOrderCount((current) => current + 1)
+            animateOrderBadge()
+          }
+          toast(
+            `Nuevo pedido ${displayLiveOrderNumber(order)}`,
+            'warning',
+          )
+          void refreshNewOrderCount()
+          router.refresh()
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => {
+          const previousOrder = payload.old as LiveOrder
+          const order = payload.new as LiveOrder
+          const statusChanged =
+            Boolean(order.status) && order.status !== previousOrder.status
+          const paymentChanged =
+            Boolean(order.payment_status) &&
+            order.payment_status !== previousOrder.payment_status
+
+          if (statusChanged) {
+            const notification =
+              orderStatusNotifications[order.status ?? ''] ??
+              orderStatusNotifications.confirmed
+            toast(
+              `${displayLiveOrderNumber(order)}: ${notification.label}`,
+              notification.variant,
+            )
+            animateOrderBadge()
+          } else if (paymentChanged) {
+            const paid = order.payment_status === 'paid'
+            toast(
+              `${displayLiveOrderNumber(order)}: ${
+                paid ? 'Pago confirmado' : 'Pago pendiente'
+              }`,
+              paid ? 'success' : 'warning',
+            )
+          }
+
+          if (statusChanged || paymentChanged) {
+            void refreshNewOrderCount()
+            router.refresh()
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'special_orders' },
+        () => {
+          toast('Nueva solicitud de producto a pedido', 'warning')
+          router.refresh()
+        },
+      )
+      .subscribe()
+    }
+
+    void subscribeToOrders()
+
+    return () => {
+      disposed = true
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refreshNewOrderCount)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+      if (ordersChannel) void supabase.removeChannel(ordersChannel)
+    }
+  }, [pathname, router, toast])
 
   if (pathname === '/admin/login') return children
 
@@ -72,21 +241,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             const active =
               link.href === '/admin'
                 ? pathname === link.href
+                : link.href === '/admin/pedidos'
+                  ? pathname === link.href
                 : pathname.startsWith(link.href)
             const Icon = link.icon
-
-            if (link.disabled) {
-              return (
-                <div
-                  key={link.href}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-muted-foreground/55"
-                >
-                  <Icon className="size-5" />
-                  {link.label}
-                  <span className="ml-auto text-[10px] font-bold uppercase">Pronto</span>
-                </div>
-              )
-            }
+            const isOrdersLink = link.href === '/admin/pedidos'
 
             return (
               <Link
@@ -101,7 +260,24 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 )}
               >
                 <Icon className="size-5" />
-                {link.label}
+                <span>{link.label}</span>
+                {isOrdersLink && newOrderCount > 0 && (
+                  <span
+                    key={`${newOrderCount}-${badgeAnimationId}`}
+                    className={cn(
+                      'ml-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold leading-none animate-in zoom-in-75 fade-in duration-300',
+                      active
+                        ? 'bg-white text-destructive'
+                        : 'bg-destructive text-white',
+                    )}
+                    aria-label={`${newOrderCount} ${
+                      newOrderCount === 1 ? 'pedido nuevo' : 'pedidos nuevos'
+                    }`}
+                  >
+                    {newOrderCount}{' '}
+                    {newOrderCount === 1 ? 'nuevo' : 'nuevos'}
+                  </span>
+                )}
               </Link>
             )
           })}

@@ -1,8 +1,7 @@
 export const PAYMENT_METHODS = [
-  'link',
+  'local',
   'transferencia',
   'entrega',
-  'whatsapp',
 ] as const
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
@@ -34,6 +33,11 @@ export type StoreSettings = {
   shippingCost: number
   freeShippingThreshold: number | null
   paymentMethods: PaymentMethod[]
+  transferAlias: string
+  transferHolder: string
+  transferBank: string
+  transferCbu: string
+  transferInstructions: string
   closedStoreMessage: string
 }
 
@@ -60,6 +64,12 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   shippingCost: 4500,
   freeShippingThreshold: 40000,
   paymentMethods: [...PAYMENT_METHODS],
+  transferAlias: '',
+  transferHolder: '',
+  transferBank: '',
+  transferCbu: '',
+  transferInstructions:
+    'Después de transferir, enviá el comprobante por WhatsApp.',
   closedStoreMessage:
     'Podés hacer tu pedido con normalidad y lo vamos a preparar apenas abramos.',
 }
@@ -75,6 +85,11 @@ type StoreSettingsRow = {
   shipping_cost?: unknown
   free_shipping_threshold?: unknown
   payment_methods?: unknown
+  transfer_alias?: unknown
+  transfer_holder?: unknown
+  transfer_bank?: unknown
+  transfer_cbu?: unknown
+  transfer_instructions?: unknown
   closed_store_message?: unknown
 }
 
@@ -199,6 +214,19 @@ export function parseStoreSettings(rowInput?: unknown): StoreSettings {
       methods.length > 0
         ? methods
         : DEFAULT_STORE_SETTINGS.paymentMethods,
+    transferAlias:
+      typeof row.transfer_alias === 'string' ? row.transfer_alias.trim() : '',
+    transferHolder:
+      typeof row.transfer_holder === 'string' ? row.transfer_holder.trim() : '',
+    transferBank:
+      typeof row.transfer_bank === 'string' ? row.transfer_bank.trim() : '',
+    transferCbu:
+      typeof row.transfer_cbu === 'string' ? row.transfer_cbu.trim() : '',
+    transferInstructions:
+      typeof row.transfer_instructions === 'string' &&
+      row.transfer_instructions.trim()
+        ? row.transfer_instructions.trim()
+        : DEFAULT_STORE_SETTINGS.transferInstructions,
     closedStoreMessage:
       typeof row.closed_store_message === 'string' &&
       row.closed_store_message.trim()

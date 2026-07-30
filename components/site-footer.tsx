@@ -21,22 +21,12 @@ const columns = [
     ],
   },
   {
-    title: 'Mi cuenta',
-    links: [
-      { label: 'Ingresar', href: '/cuenta' },
-      { label: 'Mis pedidos', href: '/cuenta/pedidos' },
-      { label: 'Mis mascotas', href: '/cuenta/mascotas' },
-      { label: 'Favoritos', href: '/favoritos' },
-    ],
-  },
-  {
     title: 'Ayuda',
     links: [
       { label: 'Preguntas frecuentes', href: '/ayuda#faq' },
-      { label: 'Políticas de compra', href: '/ayuda#compra' },
-      { label: 'Cambios y devoluciones', href: '/ayuda#cambios' },
+      { label: 'Condiciones de compra', href: '/condiciones' },
       { label: 'Envíos', href: '/ayuda#envios' },
-      { label: 'Privacidad', href: '/ayuda#privacidad' },
+      { label: 'Privacidad', href: '/privacidad' },
     ],
   },
 ]
@@ -133,10 +123,9 @@ export function SiteFooter() {
           <div className="flex flex-wrap items-center gap-2">
             {settings.paymentMethods.map((method) => {
               const label = {
-                link: 'Link de pago',
+                local: 'Pago en el local',
                 transferencia: 'Transferencia',
                 entrega: 'Pago al recibir',
-                whatsapp: 'Coordinación por WhatsApp',
               }[method]
               return (
               <span

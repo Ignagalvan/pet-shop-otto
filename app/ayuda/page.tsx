@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { CreditCard, HelpCircle, MessageCircle, PackageCheck, RefreshCcw, ShieldCheck, Truck } from 'lucide-react'
+import { CreditCard, HelpCircle, MessageCircle, PackageCheck, ShieldCheck, Truck } from 'lucide-react'
 import { PageHero } from '@/components/page-hero'
 import { waLink } from '@/lib/whatsapp'
 import { getPublicStoreSettings } from '@/lib/store-settings-server'
@@ -31,10 +31,9 @@ export default async function HelpPage() {
     'Los plazos se coordinan al confirmar el pedido.',
   ]
   const paymentSteps = settings.paymentMethods.map((method) => ({
-    link: 'Link de pago con tarjeta.',
+    local: 'Pago en el local al retirar el pedido.',
     transferencia: 'Transferencia bancaria.',
     entrega: 'Pago al recibir.',
-    whatsapp: 'Pago coordinado por WhatsApp.',
   })[method])
   const currentFaqs = [
     ...faqs,
@@ -56,13 +55,13 @@ export default async function HelpPage() {
   ]
   return (
     <>
-      <PageHero eyebrow="Centro de ayuda" title="¿Cómo podemos ayudarte?" description="Todo lo importante sobre compras, pagos, entregas y cambios, explicado de forma simple." />
+      <PageHero eyebrow="Centro de ayuda" title="¿Cómo podemos ayudarte?" description="Todo lo importante sobre compras, pagos y entregas, explicado de forma simple." />
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <HelpCard href="#compra" icon={PackageCheck} title="Cómo comprar" text="Del producto a la confirmación." />
           <HelpCard href="#envios" icon={Truck} title="Envíos y retiro" text="Opciones y coordinación." />
-          <HelpCard href="#pagos" icon={CreditCard} title="Formas de pago" text="Online, transferencia o entrega." />
-          <HelpCard href="#cambios" icon={RefreshCcw} title="Cambios" text="Condiciones y asistencia." />
+          <HelpCard href="#pagos" icon={CreditCard} title="Formas de pago" text="Local, transferencia o al recibir." />
+          <HelpCard href="/condiciones" icon={ShieldCheck} title="Condiciones" text="Información clara antes de comprar." />
         </div>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_340px]">
@@ -70,10 +69,9 @@ export default async function HelpPage() {
             <Guide id="compra" icon={PackageCheck} title="Cómo comprar" steps={['Elegí un producto y su presentación.', 'Agregalo al carrito y revisá las cantidades.', 'Completá tus datos, entrega y forma de pago.', 'Recibí la confirmación final por WhatsApp.']} />
             <Guide id="envios" icon={Truck} title="Envíos y retiro" steps={deliverySteps} />
             <Guide id="pagos" icon={CreditCard} title="Formas de pago" steps={[...paymentSteps, 'Los productos a pedido pueden requerir seña.']} />
-            <Guide id="cambios" icon={RefreshCcw} title="Cambios y devoluciones" steps={['Conservá el producto sin uso y en su empaque.', 'Escribinos con el número de pedido.', 'Revisamos el caso y coordinamos el cambio.', 'Alimentos abiertos y productos de higiene pueden tener restricciones.']} />
             <section id="privacidad" className="scroll-mt-40 rounded-3xl border border-border bg-card p-6 sm:p-8">
               <h2 className="flex items-center gap-3 text-2xl font-extrabold"><ShieldCheck className="size-6 text-brand" /> Privacidad</h2>
-              <p className="mt-4 leading-7 text-muted-foreground">Tus datos se usan únicamente para gestionar pedidos, entregas y consultas. La versión final incluirá la política legal completa y los proveedores de pago definitivos.</p>
+              <p className="mt-4 leading-7 text-muted-foreground">Tus datos se usan únicamente para gestionar pedidos, entregas y consultas con Pet Shop Otto. <Link href="/privacidad" className="font-bold text-brand underline">Leer la política completa.</Link></p>
             </section>
           </div>
           <aside className="h-fit rounded-3xl bg-brand p-6 text-white lg:sticky lg:top-36">

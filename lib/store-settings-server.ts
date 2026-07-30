@@ -16,9 +16,9 @@ export const getPublicStoreSettings = cache(async () => {
   try {
     const { url, anonKey } = getPublicSupabaseConfig()
     const select =
-      'instagram,whatsapp_number,address,email,business_hours,delivery_enabled,pickup_enabled,shipping_cost,free_shipping_threshold,payment_methods,closed_store_message'
+      'instagram,whatsapp_number,address,email,business_hours,delivery_enabled,pickup_enabled,shipping_cost,free_shipping_threshold,payment_methods,transfer_alias,transfer_holder,transfer_bank,transfer_cbu,transfer_instructions,closed_store_message'
     const response = await fetch(
-      `${url}/rest/v1/store_settings?id=eq.true&select=${select}`,
+      `${url}/rest/v1/store_settings?id=eq.true&select=${select}&order=id.asc`,
       {
         headers: {
           apikey: anonKey,

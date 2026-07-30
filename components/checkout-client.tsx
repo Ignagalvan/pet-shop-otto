@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation'
 import {
   AlertCircle,
   Banknote,
-  CreditCard,
+  Check,
+  Copy,
   LoaderCircle,
   MapPin,
   MessageCircle,
@@ -23,14 +24,65 @@ import { createOrderAction } from '@/app/checkout/actions'
 import {
   calculateShipping,
   type PaymentMethod,
+  type StoreSettings,
 } from '@/lib/store-settings'
 
 const field = 'h-12 min-w-0 w-full rounded-xl border border-border bg-card px-3.5 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15 sm:text-sm'
-const paymentLabels: Record<string, string> = {
-  link: 'Link de pago con tarjeta',
+const paymentLabels: Record<PaymentMethod, string> = {
+  local: 'Pago en el local',
   transferencia: 'Transferencia bancaria',
   entrega: 'Pago al recibir',
-  whatsapp: 'Coordinar pago por WhatsApp',
+}
+
+const paymentOptions: Record<
+  PaymentMethod,
+  { icon: typeof Banknote; title: string; detail: string }
+> = {
+  local: {
+    icon: Store,
+    title: 'Pago en el local',
+    detail: 'Pagás cuando retirás el pedido',
+  },
+  transferencia: {
+    icon: Banknote,
+    title: 'Transferencia',
+    detail: 'Transferí y enviá el comprobante',
+  },
+  entrega: {
+    icon: MapPin,
+    title: 'Pago al recibir',
+    detail: 'Pagás cuando llega el envío',
+  },
+}
+
+function availablePayments(
+  methods: PaymentMethod[],
+  delivery: 'envio' | 'retiro',
+) {
+  return methods.filter((method) => {
+    if (method === 'local') return delivery === 'retiro'
+    if (method === 'entrega') return delivery === 'envio'
+    return true
+  })
+}
+
+function initialDelivery(settings: StoreSettings): 'envio' | 'retiro' {
+  const deliveryPayments = availablePayments(
+    settings.paymentMethods,
+    'envio',
+  )
+  return settings.deliveryEnabled && deliveryPayments.length
+    ? 'envio'
+    : 'retiro'
+}
+
+function initialPayment(settings: StoreSettings): PaymentMethod {
+  return (
+    availablePayments(
+      settings.paymentMethods,
+      initialDelivery(settings),
+    )[0] ?? 'transferencia'
+  )
 }
 
 export function CheckoutClient() {
@@ -39,15 +91,30 @@ export function CheckoutClient() {
   const active = items.filter((item) => !item.savedForLater)
   const checkoutKey = useRef<string | null>(null)
   const [delivery, setDelivery] = useState<'envio' | 'retiro'>(() =>
-    settings.deliveryEnabled ? 'envio' : 'retiro',
+    initialDelivery(settings),
   )
-  const [payment, setPayment] = useState<PaymentMethod>(
-    () => settings.paymentMethods[0],
+  const [payment, setPayment] = useState<PaymentMethod>(() =>
+    initialPayment(settings),
   )
   const [accepted, setAccepted] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [isPending, startTransition] = useTransition()
   const shipping = calculateShipping(subtotal, settings, delivery)
+  const displayedPayments = availablePayments(
+    settings.paymentMethods,
+    delivery,
+  )
+
+  function chooseDelivery(nextDelivery: 'envio' | 'retiro') {
+    const nextPayments = availablePayments(
+      settings.paymentMethods,
+      nextDelivery,
+    )
+    setDelivery(nextDelivery)
+    if (!nextPayments.includes(payment)) {
+      setPayment(nextPayments[0] ?? 'transferencia')
+    }
+  }
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -120,6 +187,11 @@ export function CheckoutClient() {
         customer,
         delivery: deliveryData,
         payment: paymentLabels[payment],
+        paymentNote:
+          payment === 'transferencia'
+            ? settings.transferInstructions ||
+              'Enviá el comprobante por WhatsApp después de transferir.'
+            : undefined,
         subtotal: result.order.subtotal,
         shipping: result.order.shipping,
         total: result.order.total,
@@ -146,7 +218,7 @@ export function CheckoutClient() {
   if (!active.length) {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-20 text-center">
-        <span className="flex size-20 items-center justify-center rounded-full bg-secondary text-brand"><CreditCard className="size-9" /></span>
+        <span className="flex size-20 items-center justify-center rounded-full bg-secondary text-brand"><MessageCircle className="size-9" /></span>
         <h2 className="mt-5 text-2xl font-extrabold">Primero agregá un producto</h2>
         <p className="mt-2 text-muted-foreground">Tu checkout está listo. Solo falta elegir qué llevar.</p>
         <Link href="/productos" className="mt-7 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white">Ver productos</Link>
@@ -169,10 +241,10 @@ export function CheckoutClient() {
         <FormSection number="2" title="Entrega" description="Elegí cómo querés recibir tu compra.">
           <div className="grid gap-3 md:grid-cols-2">
             {settings.deliveryEnabled && (
-              <Choice active={delivery === 'envio'} onClick={() => setDelivery('envio')} icon={Truck} title="Envío a domicilio" detail={shipping === 0 ? 'Gratis por tu compra' : formatPrice(settings.shippingCost)} />
+              <Choice active={delivery === 'envio'} onClick={() => chooseDelivery('envio')} icon={Truck} title="Envío a domicilio" detail={shipping === 0 ? 'Gratis por tu compra' : formatPrice(settings.shippingCost)} />
             )}
             {settings.pickupEnabled && (
-              <Choice active={delivery === 'retiro'} onClick={() => setDelivery('retiro')} icon={Store} title="Retiro en el local" detail="Gratis · Coordinamos horario" />
+              <Choice active={delivery === 'retiro'} onClick={() => chooseDelivery('retiro')} icon={Store} title="Retiro en el local" detail="Gratis · Coordinamos horario" />
             )}
           </div>
           {delivery === 'envio' && (
@@ -185,13 +257,77 @@ export function CheckoutClient() {
           )}
         </FormSection>
 
-        <FormSection number="3" title="Forma de pago" description="Podés elegir la opción que te resulte más cómoda.">
+        <FormSection number="3" title="Forma de pago" description="Mostramos solamente las opciones compatibles con la entrega elegida.">
           <div className="grid gap-3 md:grid-cols-2">
-            {settings.paymentMethods.includes('link') && <Choice active={payment === 'link'} onClick={() => setPayment('link')} icon={CreditCard} title="Link de pago" detail="Tarjetas y cuotas disponibles" />}
-            {settings.paymentMethods.includes('transferencia') && <Choice active={payment === 'transferencia'} onClick={() => setPayment('transferencia')} icon={Banknote} title="Transferencia" detail="Te enviamos los datos" />}
-            {settings.paymentMethods.includes('entrega') && <Choice active={payment === 'entrega'} onClick={() => setPayment('entrega')} icon={MapPin} title="Pago al recibir" detail="Efectivo o transferencia" />}
-            {settings.paymentMethods.includes('whatsapp') && <Choice active={payment === 'whatsapp'} onClick={() => setPayment('whatsapp')} icon={MessageCircle} title="Coordinar por WhatsApp" detail="Atención personalizada" />}
+            {displayedPayments.map((method) => {
+              const option = paymentOptions[method]
+              return (
+                <Choice
+                  key={method}
+                  active={payment === method}
+                  onClick={() => setPayment(method)}
+                  icon={option.icon}
+                  title={option.title}
+                  detail={option.detail}
+                />
+              )
+            })}
           </div>
+          {payment === 'transferencia' && (
+            <div className="mt-4 rounded-2xl border border-brand/20 bg-brand-light p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand shadow-sm">
+                  <Banknote className="size-5" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="font-extrabold">Datos para transferir</h3>
+                  {settings.transferAlias || settings.transferCbu ? (
+                    <dl className="mt-3 grid min-w-0 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+                      {settings.transferAlias && (
+                        <BankDetail
+                          label="Alias"
+                          value={settings.transferAlias}
+                          copyable
+                        />
+                      )}
+                      {settings.transferCbu && (
+                        <BankDetail
+                          label="CBU / CVU"
+                          value={settings.transferCbu}
+                          copyable
+                        />
+                      )}
+                      {settings.transferHolder && (
+                        <BankDetail
+                          label="Titular"
+                          value={settings.transferHolder}
+                        />
+                      )}
+                      {settings.transferBank && (
+                        <BankDetail
+                          label="Banco o billetera"
+                          value={settings.transferBank}
+                        />
+                      )}
+                    </dl>
+                  ) : (
+                    <p className="mt-2 text-sm leading-5 text-muted-foreground">
+                      Al enviar el pedido se abrirá WhatsApp para coordinar los
+                      datos de la transferencia.
+                    </p>
+                  )}
+                  <p className="mt-3 text-sm font-bold leading-5 text-success">
+                    {settings.transferInstructions ||
+                      'Después de transferir, enviá el comprobante por WhatsApp.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+            <MessageCircle className="mt-0.5 size-4 shrink-0 text-success" />
+            Cualquiera sea el método elegido, la orden completa se envía al WhatsApp de Pet Shop Otto.
+          </p>
         </FormSection>
       </div>
 
@@ -215,7 +351,25 @@ export function CheckoutClient() {
         <div className="flex items-baseline justify-between"><span className="font-bold">Total</span><strong className="text-2xl">{formatPrice(subtotal + shipping)}</strong></div>
         <label className="mt-6 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted-foreground">
           <input required checked={accepted} onChange={(event) => setAccepted(event.target.checked)} type="checkbox" className="mt-1 size-4 accent-brand" />
-          Confirmo que los datos son correctos y acepto las condiciones de compra.
+          <span>
+            Confirmo que los datos son correctos y acepto las{' '}
+            <Link
+              href="/condiciones"
+              target="_blank"
+              className="font-bold text-brand underline"
+            >
+              condiciones de compra
+            </Link>{' '}
+            y la{' '}
+            <Link
+              href="/privacidad"
+              target="_blank"
+              className="font-bold text-brand underline"
+            >
+              política de privacidad
+            </Link>
+            .
+          </span>
         </label>
         {submitError && (
           <div
@@ -242,4 +396,65 @@ function FormSection({ number, title, description, children }: { number: string;
 
 function Choice({ active, onClick, icon: Icon, title, detail }: { active: boolean; onClick: () => void; icon: typeof Truck; title: string; detail: string }) {
   return <button type="button" onClick={onClick} className={cn('flex min-h-20 min-w-0 items-center gap-3 rounded-xl border p-3 text-left transition-all sm:rounded-2xl sm:p-4', active ? 'border-brand bg-brand-light ring-1 ring-brand' : 'border-border bg-card hover:border-brand/40')}><span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl', active ? 'bg-brand text-white' : 'bg-secondary text-brand')}><Icon className="size-5" /></span><span className="min-w-0"><strong className="block text-sm">{title}</strong><span className="mt-1 block text-xs leading-4 text-muted-foreground">{detail}</span></span></button>
+}
+
+function BankDetail({
+  label,
+  value,
+  copyable = false,
+}: {
+  label: string
+  value: string
+  copyable?: boolean
+}) {
+  const [copied, setCopied] = useState(false)
+
+  async function copyValue() {
+    try {
+      await navigator.clipboard.writeText(value)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = value
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      textarea.remove()
+    }
+
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1800)
+  }
+
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 flex min-w-0 items-center gap-2">
+        <span className="min-w-0 flex-1 break-words font-extrabold [overflow-wrap:anywhere]">
+          {value}
+        </span>
+        {copyable && (
+          <button
+            type="button"
+            onClick={copyValue}
+            className={cn(
+              'flex h-8 shrink-0 items-center gap-1 rounded-lg border bg-white px-2 text-[11px] font-extrabold transition',
+              copied
+                ? 'border-success/30 text-success'
+                : 'border-border text-brand hover:border-brand/40',
+            )}
+            aria-label={`Copiar ${label}`}
+          >
+            {copied ? (
+              <Check className="size-3.5" />
+            ) : (
+              <Copy className="size-3.5" />
+            )}
+            {copied ? 'Copiado' : 'Copiar'}
+          </button>
+        )}
+      </dd>
+    </div>
+  )
 }

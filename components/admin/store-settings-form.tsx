@@ -8,7 +8,6 @@ import {
   CreditCard,
   LoaderCircle,
   MapPin,
-  MessageCircle,
   PackageCheck,
   Save,
   Store,
@@ -42,10 +41,10 @@ const PAYMENTS: {
   icon: typeof CreditCard
 }[] = [
   {
-    value: 'link',
-    title: 'Link de pago',
-    detail: 'Tarjetas y cuotas',
-    icon: CreditCard,
+    value: 'local',
+    title: 'Pago en el local',
+    detail: 'Disponible para pedidos con retiro',
+    icon: Store,
   },
   {
     value: 'transferencia',
@@ -56,14 +55,8 @@ const PAYMENTS: {
   {
     value: 'entrega',
     title: 'Pago al recibir',
-    detail: 'Efectivo o transferencia',
+    detail: 'Disponible para pedidos con envío',
     icon: MapPin,
-  },
-  {
-    value: 'whatsapp',
-    title: 'Coordinar por WhatsApp',
-    detail: 'Atención personalizada',
-    icon: MessageCircle,
   },
 ]
 
@@ -219,6 +212,63 @@ export function StoreSettingsForm({
             />
           ))}
         </div>
+        <div className="mt-6 rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+              <Banknote className="size-5" />
+            </span>
+            <div>
+              <h3 className="font-extrabold">Datos para transferencias</h3>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                Se muestran al cliente cuando elige transferencia. Podés
+                modificarlos cuando cambie la cuenta.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Alias"
+              name="transferAlias"
+              defaultValue={settings.transferAlias}
+              placeholder="petshop.otto"
+            />
+            <Field
+              label="Titular de la cuenta"
+              name="transferHolder"
+              defaultValue={settings.transferHolder}
+              placeholder="Nombre o razón social"
+            />
+            <Field
+              label="Banco o billetera"
+              name="transferBank"
+              defaultValue={settings.transferBank}
+              placeholder="Ej. Banco Nación"
+            />
+            <Field
+              label="CBU o CVU (opcional)"
+              name="transferCbu"
+              defaultValue={settings.transferCbu}
+              placeholder="0000000000000000000000"
+            />
+          </div>
+          <label className="mt-4 block text-sm font-bold">
+            Instrucciones para el comprobante
+            <textarea
+              name="transferInstructions"
+              defaultValue={settings.transferInstructions}
+              rows={3}
+              maxLength={280}
+              className="mt-2 w-full rounded-xl border border-border bg-white p-3 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              placeholder="Después de transferir, enviá el comprobante por WhatsApp."
+            />
+          </label>
+          {!settings.transferAlias && !settings.transferCbu && (
+            <p className="mt-3 text-xs font-semibold leading-5 text-amber-700">
+              Completá al menos el alias o el CBU para que el cliente pueda
+              transferir sin esperar una respuesta.
+            </p>
+          )}
+        </div>
       </SettingsSection>
 
       <div className="sticky bottom-3 z-20 rounded-2xl border bg-white/95 p-3 shadow-lg backdrop-blur sm:flex sm:items-center sm:justify-between sm:gap-4">
@@ -232,7 +282,7 @@ export function StoreSettingsForm({
             (state.ok ? (
               <CheckCircle2 className="size-4 shrink-0" />
             ) : (
-              <MessageCircle className="size-4 shrink-0" />
+              <CreditCard className="size-4 shrink-0" />
             ))}
           {state.message}
         </div>
@@ -408,4 +458,3 @@ function ToggleCard({
     </label>
   )
 }
-

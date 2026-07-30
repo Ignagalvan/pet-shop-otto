@@ -37,7 +37,7 @@ export default async function ContactPage() {
             {info.map((item) => <div key={item.title} className="flex gap-3 rounded-2xl border border-border bg-card p-4"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-brand"><item.icon className="size-5" /></span><div><h3 className="text-sm font-extrabold">{item.title}</h3>{item.href ? <a href={item.href} target="_blank" rel="noopener noreferrer" className="mt-1 block text-sm font-bold text-brand hover:underline">{item.text}</a> : <p className="mt-1 text-sm text-muted-foreground">{item.text}</p>}</div></div>)}
           </div>
         </section>
-        <ContactForm />
+        <ContactForm whatsappNumber={settings.whatsappNumber} />
       </div>
     </>
   )

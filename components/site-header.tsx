@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   Menu,
   X,
-  User,
   MessageCircle,
   Truck,
   CreditCard,
@@ -44,10 +43,9 @@ export function SiteHeader() {
         ? 'Envíos a domicilio'
         : 'Retiro gratis en el local'
   const paymentNames = {
-    link: 'link de pago',
+    local: 'pago en el local',
     transferencia: 'transferencia',
     entrega: 'pago al recibir',
-    whatsapp: 'WhatsApp',
   }
   const announcements = [
     { icon: Truck, text: deliveryText },
@@ -104,13 +102,6 @@ export function SiteHeader() {
             </div>
 
             <div className="ml-auto flex items-center gap-1 sm:gap-2">
-              <Link
-                href="/cuenta"
-                className="hidden size-10 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-secondary sm:flex"
-                aria-label="Mi cuenta"
-              >
-                <User className="size-5.5" />
-              </Link>
               <Link
                 href="/favoritos"
                 className="relative hidden size-10 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-secondary sm:flex"
@@ -211,14 +202,7 @@ export function SiteHeader() {
                 </Link>
               ))}
             </nav>
-            <div className="grid grid-cols-2 gap-2 border-t border-border p-3">
-              <Link
-                href="/cuenta"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-              >
-                <User className="size-4" /> Mi cuenta
-              </Link>
+            <div className="border-t border-border p-3">
               <Link
                 href="/favoritos"
                 onClick={() => setMenuOpen(false)}

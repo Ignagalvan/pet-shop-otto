@@ -26,6 +26,11 @@ const settingsSchema = z.object({
     z.literal(''),
     z.coerce.number().positive().max(100_000_000),
   ]),
+  transferAlias: z.string().trim().max(120),
+  transferHolder: z.string().trim().max(160),
+  transferBank: z.string().trim().max(120),
+  transferCbu: z.string().trim().max(40),
+  transferInstructions: z.string().trim().max(280),
   closedStoreMessage: z.string().trim().min(10).max(280),
 })
 
@@ -91,6 +96,11 @@ export async function updateStoreSettingsAction(
     freeShippingThreshold: String(
       formData.get('freeShippingThreshold') ?? '',
     ).trim(),
+    transferAlias: formData.get('transferAlias'),
+    transferHolder: formData.get('transferHolder'),
+    transferBank: formData.get('transferBank'),
+    transferCbu: formData.get('transferCbu'),
+    transferInstructions: formData.get('transferInstructions'),
     closedStoreMessage: formData.get('closedStoreMessage'),
   })
 
@@ -122,6 +132,32 @@ export async function updateStoreSettingsAction(
     return {
       ok: false,
       message: 'Habilitá al menos una forma de pago.',
+    }
+  }
+
+  if (
+    deliveryEnabled &&
+    !paymentMethods.some(
+      (method) => method === 'transferencia' || method === 'entrega',
+    )
+  ) {
+    return {
+      ok: false,
+      message:
+        'Para ofrecer envíos, habilitá transferencia o pago al recibir.',
+    }
+  }
+
+  if (
+    pickupEnabled &&
+    !paymentMethods.some(
+      (method) => method === 'transferencia' || method === 'local',
+    )
+  ) {
+    return {
+      ok: false,
+      message:
+        'Para ofrecer retiro, habilitá transferencia o pago en el local.',
     }
   }
 
@@ -159,6 +195,11 @@ export async function updateStoreSettingsAction(
         ? null
         : parsed.data.freeShippingThreshold,
     payment_methods: paymentMethods,
+    transfer_alias: parsed.data.transferAlias,
+    transfer_holder: parsed.data.transferHolder,
+    transfer_bank: parsed.data.transferBank,
+    transfer_cbu: parsed.data.transferCbu,
+    transfer_instructions: parsed.data.transferInstructions,
     closed_store_message: parsed.data.closedStoreMessage,
     updated_at: new Date().toISOString(),
   })

@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useState } from 'react'
 import { Check, Info, X, TriangleAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type ToastVariant = 'success' | 'error' | 'info'
+type ToastVariant = 'success' | 'error' | 'info' | 'warning'
 
 interface Toast {
   id: number
@@ -56,11 +56,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 t.variant === 'success' && 'bg-success/15 text-success',
                 t.variant === 'error' && 'bg-destructive/15 text-destructive',
                 t.variant === 'info' && 'bg-brand/15 text-brand',
+                t.variant === 'warning' && 'bg-amber-100 text-amber-700',
               )}
             >
               {t.variant === 'success' && <Check className="size-4" />}
               {t.variant === 'error' && <TriangleAlert className="size-4" />}
               {t.variant === 'info' && <Info className="size-4" />}
+              {t.variant === 'warning' && <TriangleAlert className="size-4" />}
             </span>
             <p className="text-sm font-bold leading-snug text-card-foreground">
               {t.message}
