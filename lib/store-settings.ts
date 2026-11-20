@@ -204,10 +204,6 @@ export function parseStoreSettings(rowInput?: unknown): StoreSettings {
     transferCbu:
       typeof row.transfer_cbu === 'string' ? row.transfer_cbu.trim() : '',
   }
-  const safeMethods = methods.filter(
-    (method) =>
-      method !== 'transferencia' || hasValidTransferDetails(transferDetails),
-  )
 
   return {
     instagram:
@@ -238,7 +234,7 @@ export function parseStoreSettings(rowInput?: unknown): StoreSettings {
     ),
     freeShippingThreshold:
       Number.isFinite(freeShipping) && freeShipping > 0 ? freeShipping : null,
-    paymentMethods: safeMethods,
+    paymentMethods: methods,
     transferAlias: transferDetails.transferAlias,
     transferHolder: transferDetails.transferHolder,
     transferBank:

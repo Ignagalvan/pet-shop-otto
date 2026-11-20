@@ -314,8 +314,8 @@ export function CheckoutClient() {
                     </dl>
                   ) : (
                     <p className="mt-2 text-sm leading-5 text-muted-foreground">
-                      Al enviar el pedido se abrirá WhatsApp para coordinar los
-                      datos de la transferencia.
+                      Te pasamos los datos por WhatsApp. No transfieras hasta
+                      confirmarlos con el local.
                     </p>
                   )}
                   <p className="mt-3 text-sm font-bold leading-5 text-success">

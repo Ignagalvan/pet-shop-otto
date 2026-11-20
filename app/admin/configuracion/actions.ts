@@ -138,6 +138,7 @@ export async function updateStoreSettingsAction(
 
   if (
     paymentMethods.includes('transferencia') &&
+    (parsed.data.transferAlias !== '' || parsed.data.transferCbu !== '') &&
     !hasValidTransferDetails(parsed.data)
   ) {
     return {

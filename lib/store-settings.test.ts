@@ -26,7 +26,7 @@ describe('store settings', () => {
 
     expect(parsed.whatsappNumber).toBe('5493511234567')
     expect(parsed.shippingCost).toBe(4500)
-    expect(parsed.paymentMethods).toEqual([])
+    expect(parsed.paymentMethods).toEqual(['transferencia'])
     expect(parsed.businessHours.days).toHaveLength(7)
   })
 
