@@ -6,6 +6,15 @@ const nextConfig = {
       bodySizeLimit: '6mb',
     },
   },
+  async redirects() {
+    return [
+      {
+        source: '/cuenta/:path*',
+        destination: '/productos',
+        permanent: false,
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {

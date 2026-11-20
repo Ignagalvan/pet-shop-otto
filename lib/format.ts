@@ -1,5 +1,5 @@
 export function formatPrice(value: number): string {
-  return '$ ' + value.toLocaleString('es-AR', { maximumFractionDigits: 0 })
+  return '$ ' + value.toLocaleString('es-AR', { maximumFractionDigits: 2 })
 }
 
 export function discountPercent(price: number, oldPrice?: number): number | null {

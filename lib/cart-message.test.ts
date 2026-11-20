@@ -1,31 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { CartItem } from '@/components/store-provider'
 import { buildOrderMessage } from './cart-message'
 
-const item: CartItem = {
-  key: 'agility-10kg',
-  variantLabel: 'Bolsa de 10 kg',
+const item = {
+  productName: 'Agility Gato Urinary',
+  presentation: 'Bolsa de 10 kg',
   unitPrice: 81148.5,
   quantity: 2,
-  product: {
-    id: 'agility-urinary',
-    slug: 'agility-gato-urinary-10kg',
-    name: 'Agility Gato Urinary',
-    brand: 'Agility',
-    image: '/agility.webp',
-    petTypes: ['gatos'],
-    category: 'alimentos',
-    presentation: '10 kg',
-    price: 81148.5,
-    stock: 'disponible',
-    lifeStage: 'adulto',
-    tags: [],
-    rating: 0,
-    reviewsCount: 0,
-    description: '',
-    benefits: [],
-    features: [],
-  },
+  subtotal: 162297,
 }
 
 describe('buildOrderMessage', () => {
@@ -56,6 +37,7 @@ describe('buildOrderMessage', () => {
     expect(message).toContain('*Nombre:* Ana Pérez')
     expect(message).toContain('*1. Agility Gato Urinary*')
     expect(message).toContain('• Presentación: Bolsa de 10 kg')
+    expect(message).toContain('• Precio unitario: $ 81.148,5')
     expect(message).toContain('*Forma de pago:* Transferencia bancaria')
     expect(message).toContain('*Estado del pago:* Pendiente de confirmación')
     expect(message).toContain('*Envío:* Gratis')

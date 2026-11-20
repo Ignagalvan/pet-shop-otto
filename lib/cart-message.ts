@@ -1,6 +1,13 @@
-import type { CartItem } from '@/components/store-provider'
 import { formatPrice } from './format'
 import { BRAND_FULL_NAME } from './data'
+
+export type OrderMessageItem = {
+  productName: string
+  presentation?: string | null
+  unitPrice: number
+  quantity: number
+  subtotal: number
+}
 
 export interface OrderMessageData {
   orderNumber: string
@@ -24,7 +31,10 @@ export interface OrderMessageData {
   total: number
 }
 
-export function buildOrderMessage(items: CartItem[], order: OrderMessageData): string {
+export function buildOrderMessage(
+  items: OrderMessageItem[],
+  order: OrderMessageData,
+): string {
   const deliveryLines =
     order.delivery.type === 'envio'
       ? [
@@ -39,16 +49,14 @@ export function buildOrderMessage(items: CartItem[], order: OrderMessageData): s
       : ['*Modalidad:* Retiro en el local']
 
   const productLines = items.flatMap((item, index) => {
-    const presentation =
-      item.variantLabel || item.product.presentation
-
     return [
-      `*${index + 1}. ${item.product.name}*`,
+      `*${index + 1}. ${item.productName}*`,
       `• Cantidad: ${item.quantity}`,
-      ...(presentation
-        ? [`• Presentación: ${presentation}`]
+      ...(item.presentation
+        ? [`• Presentación: ${item.presentation}`]
         : []),
-      `• Subtotal: ${formatPrice(item.unitPrice * item.quantity)}`,
+      `• Precio unitario: ${formatPrice(item.unitPrice)}`,
+      `• Subtotal: ${formatPrice(item.subtotal)}`,
       '',
     ]
   })

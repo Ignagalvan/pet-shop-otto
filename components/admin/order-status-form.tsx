@@ -17,9 +17,11 @@ const initialState: { ok?: boolean; error?: string } = {}
 export function OrderStatusForm({
   orderId,
   status,
+  paymentStatus,
 }: {
   orderId: string
   status: OrderStatus
+  paymentStatus: 'pending' | 'paid' | 'cancelled'
 }) {
   const [state, action, pending] = useActionState(
     async (_state: typeof initialState, formData: FormData) =>
@@ -27,8 +29,30 @@ export function OrderStatusForm({
     initialState,
   )
 
+  function confirmCancellation(event: React.FormEvent<HTMLFormElement>) {
+    const form = new FormData(event.currentTarget)
+    const nextStatus = String(form.get('status'))
+    if (nextStatus !== 'cancelled' || status === 'cancelled') return
+
+    const paymentWarning =
+      paymentStatus === 'paid'
+        ? '\n\nATENCIÓN: el pago figura como PAGADO. Cancelar devuelve el stock, pero el pago seguirá marcado para que no se pierda el control del dinero.'
+        : ''
+    if (
+      !window.confirm(
+        `¿Confirmás la cancelación? El stock del pedido volverá al inventario.${paymentWarning}`,
+      )
+    ) {
+      event.preventDefault()
+    }
+  }
+
   return (
-    <form action={action} className="flex flex-wrap items-center gap-2">
+    <form
+      action={action}
+      onSubmit={confirmCancellation}
+      className="flex flex-wrap items-center gap-2"
+    >
       <input type="hidden" name="orderId" value={orderId} />
       <select
         key={status}

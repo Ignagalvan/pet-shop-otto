@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -51,6 +52,27 @@ interface StoreContextValue {
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null)
+const CART_STORAGE_KEY = 'otto-cart-v1'
+const FAVORITES_STORAGE_KEY = 'otto-favorites-v1'
+
+function isStoredCartItem(value: unknown): value is CartItem {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Partial<CartItem>
+  return (
+    typeof item.key === 'string' &&
+    typeof item.product === 'object' &&
+    item.product !== null &&
+    typeof item.product.id === 'string' &&
+    typeof item.product.name === 'string' &&
+    typeof item.unitPrice === 'number' &&
+    Number.isFinite(item.unitPrice) &&
+    item.unitPrice >= 0 &&
+    typeof item.quantity === 'number' &&
+    Number.isFinite(item.quantity) &&
+    item.quantity > 0 &&
+    item.quantity <= 1000
+  )
+}
 
 export function useStore() {
   const ctx = useContext(StoreContext)
@@ -69,7 +91,65 @@ export function StoreProvider({
   const [favorites, setFavorites] = useState<string[]>([])
   const [cartAnimationId, setCartAnimationId] = useState(0)
   const [isCartOpen, setCartOpen] = useState(false)
+  const [storageReady, setStorageReady] = useState(false)
   const { toast } = useToast()
+
+  useEffect(() => {
+    let cancelled = false
+    try {
+      const storedItems = JSON.parse(
+        window.localStorage.getItem(CART_STORAGE_KEY) ?? '[]',
+      ) as unknown
+      const storedFavorites = JSON.parse(
+        window.localStorage.getItem(FAVORITES_STORAGE_KEY) ?? '[]',
+      ) as unknown
+
+      const nextItems = Array.isArray(storedItems)
+        ? storedItems.filter(isStoredCartItem).slice(0, 50)
+        : []
+      const nextFavorites = Array.isArray(storedFavorites)
+        ? storedFavorites
+            .filter((id): id is string => typeof id === 'string')
+            .slice(0, 200)
+        : []
+
+      queueMicrotask(() => {
+        if (cancelled) return
+        setItems(nextItems)
+        setFavorites(nextFavorites)
+        setStorageReady(true)
+      })
+    } catch {
+      queueMicrotask(() => {
+        if (!cancelled) setStorageReady(true)
+      })
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!storageReady) return
+    try {
+      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
+    } catch {
+      // Storage may be disabled or full; checkout must remain usable.
+    }
+  }, [items, storageReady])
+
+  useEffect(() => {
+    if (!storageReady) return
+    try {
+      window.localStorage.setItem(
+        FAVORITES_STORAGE_KEY,
+        JSON.stringify(favorites),
+      )
+    } catch {
+      // Favorites persistence is optional when browser storage is unavailable.
+    }
+  }, [favorites, storageReady])
 
   const openCart = useCallback(() => setCartOpen(true), [])
   const closeCart = useCallback(() => setCartOpen(false), [])

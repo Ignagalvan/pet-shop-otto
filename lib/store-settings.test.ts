@@ -3,6 +3,7 @@ import { formatBusinessHours, getBusinessStatus } from './business-hours'
 import {
   DEFAULT_STORE_SETTINGS,
   calculateShipping,
+  hasValidTransferDetails,
   parseStoreSettings,
 } from './store-settings'
 
@@ -25,7 +26,7 @@ describe('store settings', () => {
 
     expect(parsed.whatsappNumber).toBe('5493511234567')
     expect(parsed.shippingCost).toBe(4500)
-    expect(parsed.paymentMethods).toEqual(['transferencia'])
+    expect(parsed.paymentMethods).toEqual([])
     expect(parsed.businessHours.days).toHaveLength(7)
   })
 
@@ -51,6 +52,37 @@ describe('store settings', () => {
     expect(
       formatBusinessHours(DEFAULT_STORE_SETTINGS.businessHours),
     ).toContain('lunes a sábado')
+  })
+
+  it('solo considera lista una transferencia con titular y alias o CBU real', () => {
+    expect(
+      hasValidTransferDetails({
+        transferAlias: 'petshop.otto',
+        transferHolder: 'Pet Shop Otto',
+        transferCbu: '0000000000000000000000',
+      }),
+    ).toBe(false)
+    expect(
+      hasValidTransferDetails({
+        transferAlias: 'petshop.otto',
+        transferHolder: 'Pet Shop Otto',
+        transferCbu: '',
+      }),
+    ).toBe(true)
+    expect(
+      hasValidTransferDetails({
+        transferAlias: '',
+        transferHolder: 'Pet Shop Otto',
+        transferCbu: '0000000000000000000000',
+      }),
+    ).toBe(false)
+    expect(
+      hasValidTransferDetails({
+        transferAlias: '',
+        transferHolder: '',
+        transferCbu: '2850590940090418135201',
+      }),
+    ).toBe(false)
   })
 })
 

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { requireStaff } from '@/lib/supabase/staff'
 import {
   PAYMENT_METHODS,
+  hasValidTransferDetails,
   normalizeInstagram,
   normalizeWhatsappNumber,
   type BusinessDay,
@@ -132,6 +133,17 @@ export async function updateStoreSettingsAction(
     return {
       ok: false,
       message: 'Habilitá al menos una forma de pago.',
+    }
+  }
+
+  if (
+    paymentMethods.includes('transferencia') &&
+    !hasValidTransferDetails(parsed.data)
+  ) {
+    return {
+      ok: false,
+      message:
+        'Para habilitar transferencias, completá el titular y un alias o CBU/CVU válido.',
     }
   }
 

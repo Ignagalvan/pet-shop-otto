@@ -19,13 +19,12 @@
     "clsx": "^2.1.1",
     "exceljs": "^4.4.0",
     "lucide-react": "^1.16.0",
-    "next": "16.2.6",
+    "next": "16.4.6",
     "react": "^19",
     "react-dom": "^19",
-    "shadcn": "^4.8.0",
     "tailwind-merge": "^3.3.1",
     "tw-animate-css": "^1.4.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -33,8 +32,9 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.2.6",
+    "eslint-config-next": "^16.4.6",
     "postcss": "^8.5",
+    "shadcn": "4.8.0",
     "supabase": "^2.110.0",
     "tailwindcss": "^4.3.3",
     "typescript": "5.7.3",
@@ -42,7 +42,14 @@
   },
   "pnpm": {
     "overrides": {
-      "hono": "4.12.25"
+      "baseline-browser-mapping": "2.11.0",
+      "brace-expansion@1": "1.1.21",
+      "brace-expansion@2": "2.1.7",
+      "browserslist": "4.28.7",
+      "hono": "4.13.16",
+      "nanoid@3": "3.3.18",
+      "source-map-js": "1.2.2",
+      "uuid": "11.1.1"
     }
   }
 }

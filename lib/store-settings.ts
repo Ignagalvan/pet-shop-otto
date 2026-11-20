@@ -167,6 +167,22 @@ export function normalizeInstagram(value: string) {
   return value.trim().replace(/^@/, '')
 }
 
+export function hasValidTransferDetails(details: {
+  transferAlias: string
+  transferHolder: string
+  transferCbu: string
+}) {
+  const cbu = details.transferCbu.replace(/\D/g, '')
+  const hasUsableCbu = /^\d{22}$/.test(cbu) && !/^(\d)\1{21}$/.test(cbu)
+  const cbuIsEmpty = cbu.length === 0
+
+  return (
+    details.transferHolder.trim().length > 0 &&
+    (details.transferAlias.trim().length > 0 || hasUsableCbu) &&
+    (cbuIsEmpty || hasUsableCbu)
+  )
+}
+
 export function parseStoreSettings(rowInput?: unknown): StoreSettings {
   if (!rowInput || typeof rowInput !== 'object') {
     return DEFAULT_STORE_SETTINGS
@@ -180,6 +196,18 @@ export function parseStoreSettings(rowInput?: unknown): StoreSettings {
     : []
 
   const freeShipping = Number(row.free_shipping_threshold)
+  const transferDetails = {
+    transferAlias:
+      typeof row.transfer_alias === 'string' ? row.transfer_alias.trim() : '',
+    transferHolder:
+      typeof row.transfer_holder === 'string' ? row.transfer_holder.trim() : '',
+    transferCbu:
+      typeof row.transfer_cbu === 'string' ? row.transfer_cbu.trim() : '',
+  }
+  const safeMethods = methods.filter(
+    (method) =>
+      method !== 'transferencia' || hasValidTransferDetails(transferDetails),
+  )
 
   return {
     instagram:
@@ -210,18 +238,12 @@ export function parseStoreSettings(rowInput?: unknown): StoreSettings {
     ),
     freeShippingThreshold:
       Number.isFinite(freeShipping) && freeShipping > 0 ? freeShipping : null,
-    paymentMethods:
-      methods.length > 0
-        ? methods
-        : DEFAULT_STORE_SETTINGS.paymentMethods,
-    transferAlias:
-      typeof row.transfer_alias === 'string' ? row.transfer_alias.trim() : '',
-    transferHolder:
-      typeof row.transfer_holder === 'string' ? row.transfer_holder.trim() : '',
+    paymentMethods: safeMethods,
+    transferAlias: transferDetails.transferAlias,
+    transferHolder: transferDetails.transferHolder,
     transferBank:
       typeof row.transfer_bank === 'string' ? row.transfer_bank.trim() : '',
-    transferCbu:
-      typeof row.transfer_cbu === 'string' ? row.transfer_cbu.trim() : '',
+    transferCbu: transferDetails.transferCbu,
     transferInstructions:
       typeof row.transfer_instructions === 'string' &&
       row.transfer_instructions.trim()

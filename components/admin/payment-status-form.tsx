@@ -21,8 +21,27 @@ export function PaymentStatusForm({
     initialState,
   )
 
+  function confirmSensitiveChange(event: React.FormEvent<HTMLFormElement>) {
+    const form = new FormData(event.currentTarget)
+    const nextStatus = String(form.get('paymentStatus'))
+    if (nextStatus === status) return
+
+    const message =
+      nextStatus === 'paid'
+        ? '¿Confirmás que el dinero fue recibido y verificado? Esta acción marcará el pedido como PAGADO.'
+        : nextStatus === 'cancelled'
+          ? '¿Confirmás que este pago debe figurar como cancelado?'
+          : '¿Confirmás que el pago debe volver a figurar como pendiente?'
+
+    if (!window.confirm(message)) event.preventDefault()
+  }
+
   return (
-    <form action={action} className="mt-3 rounded-xl border bg-white p-3">
+    <form
+      action={action}
+      onSubmit={confirmSensitiveChange}
+      className="mt-3 rounded-xl border bg-white p-3"
+    >
       <label className="text-xs font-extrabold text-muted-foreground">
         Estado del pago
         <span className="mt-2 flex gap-2">

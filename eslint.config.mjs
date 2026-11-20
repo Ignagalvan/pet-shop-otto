@@ -7,6 +7,8 @@ export default defineConfig([
   ...nextTypeScript,
   globalIgnores([
     '.next/**',
+    '.netlify/**',
+    '.codex-runtime/**',
     'node_modules/**',
     'next-env.d.ts',
   ]),

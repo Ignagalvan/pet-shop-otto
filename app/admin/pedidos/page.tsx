@@ -257,7 +257,11 @@ export default async function AdminOrdersPage({
                       {dateTime.format(new Date(order.created_at))}
                     </p>
                   </div>
-                  <OrderStatusForm orderId={order.id} status={order.status} />
+                  <OrderStatusForm
+                    orderId={order.id}
+                    status={order.status}
+                    paymentStatus={order.payment_status}
+                  />
                 </div>
 
                 <div className="grid gap-6 p-4 sm:p-5 lg:grid-cols-[1fr_1.2fr_0.8fr]">
@@ -312,6 +316,16 @@ export default async function AdminOrdersPage({
                       orderId={order.id}
                       status={order.payment_status}
                     />
+                    {order.status === 'cancelled' &&
+                      order.payment_status === 'paid' && (
+                        <p
+                          role="alert"
+                          className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-extrabold leading-5 text-amber-900"
+                        >
+                          Pedido cancelado con pago recibido. Revisá manualmente
+                          el dinero antes de cambiar el estado del pago.
+                        </p>
+                      )}
                   </section>
 
                   <section className="rounded-xl bg-background p-4">

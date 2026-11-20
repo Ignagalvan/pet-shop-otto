@@ -51,7 +51,9 @@ export function SiteHeader() {
     { icon: Truck, text: deliveryText },
     {
       icon: CreditCard,
-      text: `Pagá por ${settings.paymentMethods.map((method) => paymentNames[method]).join(', ')}`,
+      text: settings.paymentMethods.length
+        ? `Pagá por ${settings.paymentMethods.map((method) => paymentNames[method]).join(', ')}`
+        : 'Consultá las formas de pago disponibles',
     },
     { icon: Headphones, text: 'Atención personalizada por WhatsApp' },
   ]

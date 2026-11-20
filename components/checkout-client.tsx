@@ -100,10 +100,12 @@ export function CheckoutClient() {
   const [submitError, setSubmitError] = useState('')
   const [isPending, startTransition] = useTransition()
   const shipping = calculateShipping(subtotal, settings, delivery)
+  const deliveryShipping = calculateShipping(subtotal, settings, 'envio')
   const displayedPayments = availablePayments(
     settings.paymentMethods,
     delivery,
   )
+  const canCheckout = displayedPayments.includes(payment)
 
   function chooseDelivery(nextDelivery: 'envio' | 'retiro') {
     const nextPayments = availablePayments(
@@ -118,7 +120,7 @@ export function CheckoutClient() {
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!active.length || !accepted || isPending) return
+    if (!active.length || !accepted || isPending || !canCheckout) return
 
     const form = new FormData(event.currentTarget)
     const read = (name: string) => String(form.get(name) ?? '').trim()
@@ -182,13 +184,13 @@ export function CheckoutClient() {
         return
       }
 
-      const message = buildOrderMessage(active, {
+      const message = buildOrderMessage(result.order.items, {
         orderNumber: result.order.orderNumber,
         customer,
         delivery: deliveryData,
-        payment: paymentLabels[payment],
+        payment: paymentLabels[result.order.paymentMethod],
         paymentNote:
-          payment === 'transferencia'
+          result.order.paymentMethod === 'transferencia'
             ? settings.transferInstructions ||
               'Enviá el comprobante por WhatsApp después de transferir.'
             : undefined,
@@ -241,7 +243,7 @@ export function CheckoutClient() {
         <FormSection number="2" title="Entrega" description="Elegí cómo querés recibir tu compra.">
           <div className="grid gap-3 md:grid-cols-2">
             {settings.deliveryEnabled && (
-              <Choice active={delivery === 'envio'} onClick={() => chooseDelivery('envio')} icon={Truck} title="Envío a domicilio" detail={shipping === 0 ? 'Gratis por tu compra' : formatPrice(settings.shippingCost)} />
+              <Choice active={delivery === 'envio'} onClick={() => chooseDelivery('envio')} icon={Truck} title="Envío a domicilio" detail={deliveryShipping === 0 ? 'Gratis por tu compra' : formatPrice(deliveryShipping)} />
             )}
             {settings.pickupEnabled && (
               <Choice active={delivery === 'retiro'} onClick={() => chooseDelivery('retiro')} icon={Store} title="Retiro en el local" detail="Gratis · Coordinamos horario" />
@@ -328,6 +330,15 @@ export function CheckoutClient() {
             <MessageCircle className="mt-0.5 size-4 shrink-0 text-success" />
             Cualquiera sea el método elegido, la orden completa se envía al WhatsApp de Pet Shop Otto.
           </p>
+          {!displayedPayments.length && (
+            <p
+              role="alert"
+              className="mt-4 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm font-bold text-destructive"
+            >
+              No hay una forma de pago disponible para esta entrega. Elegí la
+              otra modalidad o consultanos por WhatsApp.
+            </p>
+          )}
         </FormSection>
       </div>
 
@@ -380,7 +391,7 @@ export function CheckoutClient() {
             {submitError}
           </div>
         )}
-        <button disabled={!accepted || isPending} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-success px-3 py-3 text-center text-sm font-extrabold leading-5 text-white disabled:cursor-not-allowed disabled:opacity-50">
+        <button disabled={!accepted || isPending || !canCheckout} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-success px-3 py-3 text-center text-sm font-extrabold leading-5 text-white disabled:cursor-not-allowed disabled:opacity-50">
           {isPending ? <LoaderCircle className="size-4 shrink-0 animate-spin" /> : <MessageCircle className="size-4 shrink-0" />}
           {isPending ? 'Registrando pedido…' : 'Confirmar y enviar pedido por WhatsApp'}
         </button>

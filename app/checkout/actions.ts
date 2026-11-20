@@ -63,6 +63,15 @@ type CreatedOrder = {
   subtotal: number
   shipping: number
   total: number
+  paymentMethod: 'local' | 'transferencia' | 'entrega'
+  paymentStatus: 'pending'
+  items: Array<{
+    productName: string
+    presentation: string | null
+    unitPrice: number
+    quantity: number
+    subtotal: number
+  }>
 }
 
 export type CheckoutResult =
@@ -107,6 +116,17 @@ export async function createOrderAction(input: CheckoutInput): Promise<CheckoutR
     }
   }
 
+  if (
+    order.paymentStatus !== 'pending' ||
+    !['local', 'transferencia', 'entrega'].includes(order.paymentMethod) ||
+    !Array.isArray(order.items)
+  ) {
+    return {
+      ok: false,
+      error: 'La confirmación del pedido no es válida. No se registró ningún pago.',
+    }
+  }
+
   return {
     ok: true,
     order: {
@@ -114,6 +134,12 @@ export async function createOrderAction(input: CheckoutInput): Promise<CheckoutR
       subtotal: Number(order.subtotal),
       shipping: Number(order.shipping),
       total: Number(order.total),
+      items: order.items.map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        quantity: Number(item.quantity),
+        subtotal: Number(item.subtotal),
+      })),
     },
   }
 }
