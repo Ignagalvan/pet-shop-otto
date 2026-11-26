@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs'
+import { readOttoCell } from './formula-values'
 
 const SHEET_NAME = 'STOCK Y PRECIO'
 
@@ -102,16 +103,7 @@ export type OttoImportResult = {
 }
 
 function readCell(cell: ExcelJS.Cell): unknown {
-  const value = cell.value
-  if (value && typeof value === 'object') {
-    if ('result' in value) return value.result
-    if ('richText' in value) {
-      return value.richText.map((part) => part.text).join('')
-    }
-    if ('text' in value) return value.text
-    if ('error' in value) return value.error
-  }
-  return value
+  return readOttoCell(cell)
 }
 
 function asText(value: unknown): string {
