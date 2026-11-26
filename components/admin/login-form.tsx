@@ -2,13 +2,15 @@
 
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { LoaderCircle, LockKeyhole } from 'lucide-react'
+import { Eye, EyeOff, LoaderCircle, LockKeyhole } from 'lucide-react'
+import { isStaffRole } from '@/lib/admin-access'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 export function AdminLoginForm({ nextPath = '/admin' }: { nextPath?: string }) {
   const router = useRouter()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -16,7 +18,7 @@ export function AdminLoginForm({ nextPath = '/admin' }: { nextPath?: string }) {
     setLoading(true)
 
     const form = new FormData(event.currentTarget)
-    const email = String(form.get('email') ?? '')
+    const email = String(form.get('email') ?? '').trim().toLowerCase()
     const password = String(form.get('password') ?? '')
     const supabase = createSupabaseBrowserClient()
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -30,12 +32,19 @@ export function AdminLoginForm({ nextPath = '/admin' }: { nextPath?: string }) {
       return
     }
 
-    // On a brand-new installation only, the first authenticated account can
-    // claim the owner profile. The database function locks the table and
-    // permanently rejects this operation after an owner exists.
-    await supabase.rpc('claim_initial_owner', {
-      p_full_name: 'Dueño de Pet Shop Otto',
-    })
+    const { data: userData } = await supabase.auth.getUser()
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userData.user?.id ?? '')
+      .maybeSingle()
+
+    if (profileError || !isStaffRole(profile?.role)) {
+      await supabase.auth.signOut()
+      setError('Esta cuenta no tiene permiso para entrar al panel del negocio.')
+      setLoading(false)
+      return
+    }
 
     router.replace(nextPath.startsWith('/admin') ? nextPath : '/admin')
     router.refresh()
@@ -56,19 +65,32 @@ export function AdminLoginForm({ nextPath = '/admin' }: { nextPath?: string }) {
           placeholder="tu@correo.com"
         />
       </label>
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-bold text-foreground">
+      <div>
+        <label htmlFor="admin-password" className="mb-1.5 block text-sm font-bold text-foreground">
           Contraseña
-        </span>
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          className="h-12 w-full rounded-xl border bg-white px-4 outline-none transition focus:border-primary focus:ring-3 focus:ring-primary/15"
-          placeholder="••••••••"
-        />
-      </label>
+        </label>
+        <div className="relative">
+          <input
+            id="admin-password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            required
+            className="h-12 w-full rounded-xl border bg-white pl-4 pr-14 outline-none transition focus:border-primary focus:ring-3 focus:ring-primary/15"
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            aria-controls="admin-password"
+            aria-pressed={showPassword}
+            onClick={() => setShowPassword((visible) => !visible)}
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-muted-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            {showPassword ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
+          </button>
+        </div>
+      </div>
       {error && (
         <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
           {error}

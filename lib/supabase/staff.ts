@@ -2,6 +2,7 @@ import 'server-only'
 
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
+import { isStaffRole } from '@/lib/admin-access'
 import { createSupabaseServerClient } from './server'
 
 export const requireStaff = cache(async function requireStaff() {
@@ -16,6 +17,8 @@ export const requireStaff = cache(async function requireStaff() {
     .select('id, full_name, role')
     .eq('id', userId)
     .maybeSingle()
+
+  if (!isStaffRole(profile?.role)) redirect('/productos')
 
   return { supabase, user: { id: userId }, profile }
 })
