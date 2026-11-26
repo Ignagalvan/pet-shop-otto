@@ -200,11 +200,11 @@ export default async function EditProductPage({
             <h2 className="text-lg font-extrabold">Precios y stock</h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <label className={labelClass}>
-                Presentación
+                <span className="flex min-h-10 items-end">Presentación</span>
                 <input name="presentation" defaultValue={variant.presentation ?? ''} className={inputClass} placeholder="Ej: 15 kg" />
               </label>
               <label className={labelClass}>
-                Bolsas / unidades cerradas
+                <span className="flex min-h-10 items-end">Bolsas / unidades cerradas</span>
                 <input name="stockQuantity" type="number" min="0" step="1" required defaultValue={variant.inventory?.quantity ?? 0} className={inputClass} />
               </label>
               <ProductPricingFields key={variant.id} initial={{
