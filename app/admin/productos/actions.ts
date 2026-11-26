@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { requireStaff } from '@/lib/supabase/staff'
 import { publicationMissingFields } from '@/lib/product-publication'
+import { calculateSalePrice, roundingSteps } from '@/lib/product-pricing'
 
 export async function manageLooseStockAction(form:FormData) {
   const {supabase}=await requireStaff()
@@ -61,8 +62,8 @@ const productSchema = z.object({
   categoryId: z.string().regex(/^\d+$/),
   presentation: z.string().trim().max(80),
   packageWeightKg: z.string(),
-  purchaseCost: z.coerce.number().min(0),
-  packagePrice: z.coerce.number().min(0),
+  purchaseCost: z.coerce.number().min(0).max(100000000),
+  packagePrice: z.coerce.number().min(0).max(100000000),
   kgPrice: z.string(),
   stockQuantity: z.coerce.number().min(0),
   packageMarginPercent: z.string(),
@@ -102,6 +103,19 @@ export async function updateProductAction(formData: FormData) {
     .map(String)
     .filter((value) => /^\d+$/.test(value))
 
+  const roundingStep = z.coerce.number().refine(value => roundingSteps.some(step => step === value)).parse(formData.get('roundingStep') ?? 100)
+  const sellsByKg = formData.get('sellsByKg') === 'on'
+  const autoPackage = formData.get('automaticPackagePrice') === 'true'
+  const autoKg = formData.get('automaticKgPrice') === 'true' && sellsByKg
+  const packageMargin = optionalNumber(values.packageMarginPercent)
+  const kgMargin = optionalNumber(values.kgMarginPercent)
+  const weight = optionalNumber(values.packageWeightKg)
+  const packagePrice = autoPackage && packageMargin !== '' ? calculateSalePrice(values.purchaseCost, packageMargin, roundingStep) : values.packagePrice
+  const kgPrice = autoKg && kgMargin !== '' && weight !== '' ? calculateSalePrice(values.purchaseCost, kgMargin, roundingStep, weight) : optionalNumber(values.kgPrice)
+  if (packagePrice === null || kgPrice === null || (autoPackage && packageMargin === '') || (autoKg && (kgMargin === '' || weight === ''))) {
+    redirect(`/admin/productos/${values.productId}?error=${encodeURIComponent('Revisá costo, peso y porcentajes para calcular los precios. No se guardaron cambios.')}`)
+  }
+
   const { error } = await supabase.rpc('update_admin_product', {
     p_product_id: values.productId,
     p_variant_id: values.variantId,
@@ -113,12 +127,14 @@ export async function updateProductAction(formData: FormData) {
       presentation: values.presentation,
       packageWeightKg: optionalNumber(values.packageWeightKg),
       purchaseCost: values.purchaseCost,
-      packagePrice: values.packagePrice,
-      kgPrice: optionalNumber(values.kgPrice),
+      packagePrice,
+      kgPrice,
       stockQuantity: values.stockQuantity,
-      packageMarginPercent: optionalNumber(values.packageMarginPercent),
-      kgMarginPercent: optionalNumber(values.kgMarginPercent),
-      sellsByKg: formData.get('sellsByKg') === 'on',
+      packageMarginPercent: packageMargin,
+      kgMarginPercent: kgMargin,
+      roundingStep,
+      syncLoosePrice: formData.get('syncLoosePrice') === 'true' && sellsByKg,
+      sellsByKg,
       published: formData.get('published') === 'on',
       featured: formData.get('featured') === 'on',
       onRequest: formData.get('onRequest') === 'on',

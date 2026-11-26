@@ -52,9 +52,22 @@ it('separa bolsas y suelto, apertura, compras, reintentos y cancelaciones en Pos
    {variantId:'00000000-0000-4000-8000-000000000007',mode:'kg',quantity:0.6},
  ])).rejects.toThrow()
  expect((await db.query<{qty:string}>(`select quantity_kg::text qty from loose_inventory`)).rows[0].qty).toBe('1.000')
+ // Saving automatic prices is atomic, updates the shared kg price and never
+ // opens bags or replaces loose stock. Unrelated edits retain that kg price.
+ const productId='00000000-0000-4000-8000-000000000002'
+ const variantId='00000000-0000-4000-8000-000000000003'
+ const pricingData={name:'ALIMENTO PERRO 10KG',description:'Solo prueba local',brandId:1,categoryId:category,petTypeIds:[pet],presentation:'10 kg',packageWeightKg:10,purchaseCost:10000.25,packageMarginPercent:35,kgMarginPercent:60,stockQuantity:1,packagePrice:13600,kgPrice:1700,roundingStep:100,syncLoosePrice:true,sellsByKg:true,published:true}
+ await db.query(`select update_admin_product($1::uuid,$2::uuid,$3::jsonb)`,[productId,variantId,JSON.stringify(pricingData)])
+ expect((await db.query<{price:string;qty:string}>(`select price_per_kg::text price,quantity_kg::text qty from loose_inventory`)).rows[0]).toEqual({price:'1700.00',qty:'1.000'})
+ expect((await db.query<{price:string}>(`select package_price::text price from product_variants where id=$1`,[variantId])).rows[0].price).toBe('13600.00')
+ expect((await db.query<{qty:string}>(`select quantity::text qty from inventory where variant_id=$1`,[variantId])).rows[0].qty).toBe('1.000')
+ await db.query(`select update_admin_product($1::uuid,$2::uuid,$3::jsonb)`,[productId,variantId,JSON.stringify({...pricingData,syncLoosePrice:false,kgPrice:999})])
+ expect((await db.query<{price:string}>(`select price_per_kg::text price from loose_inventory`)).rows[0].price).toBe('1700.00')
+ await request([{variantId,mode:'kg',quantity:0.25}])
+ expect((await db.query<{total:string;payment:string}>(`select subtotal::text total,payment_status payment from orders order by created_at desc limit 1`)).rows[0]).toEqual({total:'425.00',payment:'pending'})
  // An Excel-style closed-stock update must not change the owner's loose kg.
  await db.exec(`update inventory set quantity=4 where variant_id='00000000-0000-4000-8000-000000000007'`)
- expect((await db.query<{qty:string}>(`select quantity_kg::text qty from loose_inventory`)).rows[0].qty).toBe('1.000')
+ expect((await db.query<{qty:string}>(`select quantity_kg::text qty from loose_inventory`)).rows[0].qty).toBe('0.750')
  await db.exec(`select set_config('request.jwt.claim.sub','',false)`)
  await expect(db.exec(opening)).rejects.toThrow('Staff permission required')
  await expect(db.exec(`select set_loose_inventory('00000000-0000-4000-8000-000000000006',100,1)`)).rejects.toThrow('Staff permission required')

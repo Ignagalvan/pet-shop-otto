@@ -5,6 +5,7 @@ import { ProductImageUploader } from '@/components/admin/product-image-uploader'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { updateProductAction, manageLooseStockAction } from '../actions'
 import { randomUUID } from 'node:crypto'
+import { ProductPricingFields } from '@/components/admin/product-pricing-fields'
 
 export const metadata = { title: 'Editar producto' }
 
@@ -34,6 +35,7 @@ type ProductRecord = {
       purchase_cost: number
       package_margin_percent: number | null
       kg_margin_percent: number | null
+      rounding_step: number
     } | null
   }>
 }
@@ -80,7 +82,8 @@ export default async function EditProductPage({
             variant_costs (
               purchase_cost,
               package_margin_percent,
-              kg_margin_percent
+              kg_margin_percent,
+              rounding_step
             )
           )
         `,
@@ -201,38 +204,19 @@ export default async function EditProductPage({
                 <input name="presentation" defaultValue={variant.presentation ?? ''} className={inputClass} placeholder="Ej: 15 kg" />
               </label>
               <label className={labelClass}>
-                Peso de la bolsa (kg)
-                <input name="packageWeightKg" type="number" min="0" step="0.001" defaultValue={variant.package_weight_kg ?? ''} className={inputClass} />
-              </label>
-              <label className={labelClass}>
                 Bolsas / unidades cerradas
                 <input name="stockQuantity" type="number" min="0" step="1" required defaultValue={variant.inventory?.quantity ?? 0} className={inputClass} />
               </label>
-              <label className={labelClass}>
-                Costo
-                <input name="purchaseCost" type="number" min="0" step="0.01" required defaultValue={variant.variant_costs?.purchase_cost ?? 0} className={inputClass} />
-              </label>
-              <label className={labelClass}>
-                Precio de venta
-                <input name="packagePrice" type="number" min="0" step="0.01" required defaultValue={variant.package_price ?? 0} className={inputClass} />
-              </label>
-              <label className={labelClass}>
-                Margen bolsa (%)
-                <input name="packageMarginPercent" type="number" min="0" step="0.01" defaultValue={variant.variant_costs?.package_margin_percent ?? ''} className={inputClass} />
-              </label>
-              <label className={labelClass}>
-                Precio por kilo de referencia (Excel)
-                <input name="kgPrice" type="number" min="0" step="0.01" defaultValue={variant.kg_price ?? ''} className={inputClass} />
-                <span className="text-xs font-normal text-muted-foreground">El precio de venta del suelto se configura abajo, en “Bolsas cerradas y suelto”.</span>
-              </label>
-              <label className={labelClass}>
-                Margen por kilo (%)
-                <input name="kgMarginPercent" type="number" min="0" step="0.01" defaultValue={variant.variant_costs?.kg_margin_percent ?? ''} className={inputClass} />
-              </label>
-              <label className="flex items-center gap-3 self-end rounded-xl border bg-background p-3 text-sm font-bold">
-                <input name="sellsByKg" type="checkbox" defaultChecked={variant.sells_by_kg} className="size-4 accent-primary" />
-                Se vende por kilo
-              </label>
+              <ProductPricingFields key={variant.id} initial={{
+                cost: Number(variant.variant_costs?.purchase_cost ?? 0),
+                weight: variant.package_weight_kg,
+                packagePrice: variant.package_price,
+                kgPrice: Number(product.loose_inventory?.price_per_kg) || variant.kg_price,
+                packageMargin: variant.variant_costs?.package_margin_percent ?? null,
+                kgMargin: variant.variant_costs?.kg_margin_percent ?? null,
+                roundingStep: Number(variant.variant_costs?.rounding_step ?? 100),
+                sellsByKg: variant.sells_by_kg,
+              }}/>
             </div>
           </section>
 
