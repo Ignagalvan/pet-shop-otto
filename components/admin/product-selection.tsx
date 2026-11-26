@@ -62,7 +62,3 @@ export function ProductSelectionCheckbox({ id, name }: { id: string; name: strin
   return <input type="checkbox" aria-label={`Seleccionar ${name}`} checked={selection.selected.includes(id)} disabled={selection.pending} onChange={()=>selection.toggle(id)} className="size-5 shrink-0 accent-primary" />
 }
 
-export function ProductVisibilityButton({ id, published }: { id: string; published: boolean }) {
-  const selection = useSelection()
-  return <button type="button" disabled={selection.pending} onClick={()=>selection.publish([id],!published)} className="inline-flex min-h-11 items-center justify-center rounded-xl border px-3 text-sm font-bold text-primary hover:bg-primary/5 disabled:opacity-50">{published?'Ocultar':'Publicar'}</button>
-}

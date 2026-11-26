@@ -4,7 +4,7 @@ import { ImageOff, PackageSearch, Pencil, Search } from 'lucide-react'
 import { ProductPagination } from '@/components/admin/product-pagination'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getProductImageUrl } from '@/lib/supabase/storage'
-import { ProductSelection, ProductSelectionCheckbox, ProductVisibilityButton } from '@/components/admin/product-selection'
+import { ProductSelection, ProductSelectionCheckbox } from '@/components/admin/product-selection'
 
 export const metadata = { title: 'Administrar productos' }
 
@@ -219,7 +219,6 @@ export default async function AdminProductsPage({
                       {product.published ? 'Publicado' : 'Borrador'}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2 xl:flex-col">
                   <Link
                     href={`/admin/productos/${product.id}`}
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 font-bold text-white transition hover:bg-primary/90"
@@ -228,8 +227,6 @@ export default async function AdminProductsPage({
                     <Pencil className="size-4" />
                     Editar
                   </Link>
-                  <ProductVisibilityButton id={product.id} published={product.published} />
-                  </div>
                 </article>
               )
             })}
