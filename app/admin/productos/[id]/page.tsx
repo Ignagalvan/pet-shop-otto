@@ -3,11 +3,13 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, Save } from 'luci
 import { notFound } from 'next/navigation'
 import { ProductImageUploader } from '@/components/admin/product-image-uploader'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { updateProductAction } from '../actions'
+import { updateProductAction, manageLooseStockAction } from '../actions'
+import { randomUUID } from 'node:crypto'
 
 export const metadata = { title: 'Editar producto' }
 
 type ProductRecord = {
+  loose_inventory: {quantity_kg:number;price_per_kg:number} | null
   id: string
   slug: string
   name: string
@@ -55,6 +57,7 @@ export default async function EditProductPage({
       .select(
         `
           id,
+          loose_inventory(quantity_kg,price_per_kg),
           slug,
           name,
           description,
@@ -202,8 +205,8 @@ export default async function EditProductPage({
                 <input name="packageWeightKg" type="number" min="0" step="0.001" defaultValue={variant.package_weight_kg ?? ''} className={inputClass} />
               </label>
               <label className={labelClass}>
-                Stock actual
-                <input name="stockQuantity" type="number" min="0" step="0.001" required defaultValue={variant.inventory?.quantity ?? 0} className={inputClass} />
+                Bolsas / unidades cerradas
+                <input name="stockQuantity" type="number" min="0" step="1" required defaultValue={variant.inventory?.quantity ?? 0} className={inputClass} />
               </label>
               <label className={labelClass}>
                 Costo
@@ -218,8 +221,9 @@ export default async function EditProductPage({
                 <input name="packageMarginPercent" type="number" min="0" step="0.01" defaultValue={variant.variant_costs?.package_margin_percent ?? ''} className={inputClass} />
               </label>
               <label className={labelClass}>
-                Precio por kilo
+                Precio por kilo de referencia (Excel)
                 <input name="kgPrice" type="number" min="0" step="0.01" defaultValue={variant.kg_price ?? ''} className={inputClass} />
+                <span className="text-xs font-normal text-muted-foreground">El precio de venta del suelto se configura abajo, en “Bolsas cerradas y suelto”.</span>
               </label>
               <label className={labelClass}>
                 Margen por kilo (%)
@@ -296,6 +300,28 @@ export default async function EditProductPage({
           </button>
         </aside>
       </form>
+      {variant.sells_by_kg && <section className="mt-6 rounded-2xl border bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-extrabold">Bolsas cerradas y suelto</h2>
+        <p className="mt-2 text-sm">Cerradas de esta presentación: <strong>{Number(variant.inventory?.quantity??0).toLocaleString('es-AR')}</strong>. Suelto del mismo alimento: <strong>{Number(product.loose_inventory?.quantity_kg??0).toLocaleString('es-AR')} kg</strong>.</p>
+        <p className="mt-2 text-sm text-muted-foreground">El suelto se comparte entre las presentaciones del mismo alimento. Abrir una bolsa resta una unidad cerrada y suma su peso en kilos. No se abre automáticamente al comprar.</p>
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <form action={manageLooseStockAction} className="rounded-xl border p-4">
+            <input type="hidden" name="productId" value={product.id}/><input type="hidden" name="variantId" value={variant.id}/><input type="hidden" name="operation" value="open"/><input type="hidden" name="operationId" value={randomUUID()}/>
+            <h3 className="font-bold">Abrir bolsas de {variant.presentation}</h3>
+            <label className={`${labelClass} mt-3`}>Cantidad de bolsas a abrir<input name="bags" type="number" min="1" step="1" max={Math.floor(Number(variant.inventory?.quantity??0))} defaultValue="1" required className={inputClass}/></label>
+            <label className={`${labelClass} mt-3`}>Precio de venta de 1 kg suelto<input name="pricePerKg" type="number" min="0.01" step="0.01" defaultValue={Number(product.loose_inventory?.price_per_kg)||variant.kg_price||''} required className={inputClass}/></label>
+            <button disabled={Number(variant.inventory?.quantity??0)<1} className="mt-4 min-h-11 rounded-xl bg-primary px-4 font-bold text-white disabled:opacity-40">Registrar apertura de bolsas</button>
+          </form>
+          <form action={manageLooseStockAction} className="rounded-xl border p-4">
+            <input type="hidden" name="productId" value={product.id}/><input type="hidden" name="operation" value="adjust"/>
+            <h3 className="font-bold">Registrar los kilos abiertos reales</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Usá esta opción para el saldo inicial o una corrección. Reemplaza los kilos sueltos; no descuenta bolsas cerradas.</p>
+            <label className={`${labelClass} mt-3`}>Kilos sueltos disponibles<input name="quantityKg" type="number" min="0" step="0.001" defaultValue={product.loose_inventory?.quantity_kg??0} required className={inputClass}/></label>
+            <label className={`${labelClass} mt-3`}>Precio de venta de 1 kg suelto<input name="pricePerKg" type="number" min="0.01" step="0.01" defaultValue={Number(product.loose_inventory?.price_per_kg)||variant.kg_price||''} required className={inputClass}/></label>
+            <button className="mt-4 min-h-11 rounded-xl border border-primary px-4 font-bold text-primary">Guardar saldo real de suelto</button>
+          </form>
+        </div>
+      </section>}
     </div>
   )
 }

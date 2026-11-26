@@ -29,6 +29,7 @@ export interface Variant {
   label: string
   price: number
   mode?: 'package' | 'kg'
+  stockCount?: number
 }
 
 export interface Review {
@@ -40,6 +41,7 @@ export interface Review {
 }
 
 export interface Product {
+  sourceSlugs?: string[]
   id: string
   defaultVariantId?: string
   defaultSaleMode?: 'package' | 'kg'

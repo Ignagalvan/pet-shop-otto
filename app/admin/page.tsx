@@ -201,9 +201,9 @@ export default async function AdminPage() {
 
   const operationCards = [
     {
-      label: 'Valor del inventario',
+      label: 'Valor del stock cerrado',
       value: formatPrice(Number(stats.inventoryValue)),
-      detail: `${Number(stats.inventoryUnits).toLocaleString('es-AR')} unidades al costo`,
+      detail: `${Number(stats.inventoryUnits).toLocaleString('es-AR')} unidades cerradas al costo; no incluye suelto`,
       icon: Boxes,
       href: '/admin/productos',
     },

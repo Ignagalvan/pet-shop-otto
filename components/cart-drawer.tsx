@@ -2,7 +2,8 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { X, Plus, Minus, Trash2, ShoppingCart, Truck } from 'lucide-react'
+import { X, Trash2, ShoppingCart, Truck } from 'lucide-react'
+import { CartQuantity } from './cart-quantity'
 import { useStore } from './store-provider'
 import { formatPrice } from '@/lib/format'
 
@@ -11,7 +12,6 @@ export function CartDrawer() {
     items,
     isCartOpen,
     closeCart,
-    updateQuantity,
     removeFromCart,
     subtotal,
     cartCount,
@@ -133,24 +133,7 @@ export function CartDrawer() {
                       </button>
                     </div>
                     <div className="mt-auto flex items-center justify-between pt-2">
-                      <div className="flex items-center rounded-lg border border-border">
-                        <button
-                          onClick={() => updateQuantity(item.key, item.quantity - 1)}
-                          className="flex size-8 items-center justify-center rounded-l-lg text-foreground transition-colors hover:bg-secondary disabled:opacity-40"
-                          disabled={item.quantity <= 1}
-                          aria-label="Restar"
-                        >
-                          <Minus className="size-3.5" />
-                        </button>
-                        <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.key, item.quantity + 1)}
-                          className="flex size-8 items-center justify-center rounded-r-lg text-foreground transition-colors hover:bg-secondary"
-                          aria-label="Sumar"
-                        >
-                          <Plus className="size-3.5" />
-                        </button>
-                      </div>
+                      <CartQuantity item={item} />
                       <span className="text-sm font-extrabold text-foreground">
                         {formatPrice(item.unitPrice * item.quantity)}
                       </span>

@@ -6,6 +6,28 @@ import { z } from 'zod'
 import { requireStaff } from '@/lib/supabase/staff'
 import { publicationMissingFields } from '@/lib/product-publication'
 
+export async function manageLooseStockAction(form:FormData) {
+  const {supabase}=await requireStaff()
+  const productId=z.uuid().parse(form.get('productId'))
+  const price=z.coerce.number().positive().max(100000000).parse(form.get('pricePerKg'))
+  const opening=form.get('operation')==='open'
+  const result=opening ? await supabase.rpc('open_product_bags',{
+    p_variant_id:z.uuid().parse(form.get('variantId')),
+    p_bags:z.coerce.number().int().positive().max(1000).parse(form.get('bags')),
+    p_price_per_kg:price,
+    p_operation_id:z.uuid().parse(form.get('operationId')),
+  }) : await supabase.rpc('set_loose_inventory',{
+    p_product_id:productId,
+    p_quantity_kg:z.coerce.number().min(0).max(1000000).parse(form.get('quantityKg')),
+    p_price_per_kg:price,
+  })
+  if(result.error) redirect(`/admin/productos/${productId}?error=${encodeURIComponent(result.error.message)}`)
+  for(const path of ['/admin','/admin/productos','/','/productos']) revalidatePath(path)
+  revalidatePath('/producto/[slug]','page')
+  revalidatePath(`/admin/productos/${productId}`)
+  redirect(`/admin/productos/${productId}?guardado=1`)
+}
+
 export async function setProductPublicationAction(ids: string[], published: boolean) {
   const parsed = z.object({ ids: z.array(z.uuid()).min(1).max(30), published: z.boolean() }).safeParse({ ids, published })
   if (!parsed.success) return { updated: 0, blocked: [], error: 'Seleccioná entre 1 y 30 productos de esta página.' }

@@ -52,7 +52,7 @@ interface StoreContextValue {
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null)
-const CART_STORAGE_KEY = 'otto-cart-v1'
+const CART_STORAGE_KEY = 'otto-cart-v2-split-stock'
 const FAVORITES_STORAGE_KEY = 'otto-favorites-v1'
 
 function isStoredCartItem(value: unknown): value is CartItem {
@@ -177,7 +177,7 @@ export function StoreProvider({
             key,
             product,
             variantId,
-            variantLabel,
+            variantLabel: variantLabel ?? product.variants?.find(v=>v.id===variantId)?.label ?? product.presentation,
             saleMode,
             unitPrice: unitPrice ?? product.price,
             quantity,
@@ -195,9 +195,12 @@ export function StoreProvider({
   }, [])
 
   const updateQuantity = useCallback((key: string, quantity: number) => {
-    if (quantity < 1) return
+    const item=items.find(item=>item.key===key)
+    if (!Number.isFinite(quantity)||quantity<(item?.saleMode==='kg'?0.001:1)||quantity>1000) return
+    if(item?.saleMode!=='kg'&&!Number.isInteger(quantity)) return
+    quantity=Math.round(quantity*1000)/1000
     setItems((prev) => prev.map((i) => (i.key === key ? { ...i, quantity } : i)))
-  }, [])
+  }, [items])
 
   const toggleSaveForLater = useCallback((key: string) => {
     setItems((prev) =>
@@ -220,7 +223,7 @@ export function StoreProvider({
   const isFavorite = useCallback((id: string) => favorites.includes(id), [favorites])
 
   const activeItems = items.filter((i) => !i.savedForLater)
-  const cartCount = activeItems.reduce((n, i) => n + i.quantity, 0)
+  const cartCount = activeItems.reduce((n, i) => n + (i.saleMode==='kg'?1:i.quantity), 0)
   const subtotal = activeItems.reduce((n, i) => n + i.unitPrice * i.quantity, 0)
 
   const value = useMemo<StoreContextValue>(

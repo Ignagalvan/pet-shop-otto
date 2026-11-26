@@ -116,6 +116,8 @@ export function ProductCard({ product }: { product: Product }) {
             >
               Ver pedido
             </Link>
+          ) : (product.variants?.length ?? 0)>1 || product.defaultSaleMode==='kg' ? (
+            <Link href={`/producto/${product.slug}`} className="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl bg-brand px-3 text-sm font-bold text-white">Elegir presentación</Link>
           ) : (
             <button
               onClick={() => addToCart(product)}

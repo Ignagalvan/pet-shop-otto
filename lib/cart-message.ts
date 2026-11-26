@@ -51,7 +51,7 @@ export function buildOrderMessage(
   const productLines = items.flatMap((item, index) => {
     return [
       `*${index + 1}. ${item.productName}*`,
-      `• Cantidad: ${item.quantity}`,
+      `• Cantidad: ${item.quantity}${item.presentation?.startsWith('Suelto')?' kg':''}`,
       ...(item.presentation
         ? [`• Presentación: ${item.presentation}`]
         : []),

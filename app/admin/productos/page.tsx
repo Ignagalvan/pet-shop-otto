@@ -11,6 +11,7 @@ export const metadata = { title: 'Administrar productos' }
 const PAGE_SIZE = 30
 
 type AdminProduct = {
+  loose_inventory: { quantity_kg:number } | null
   id: string
   name: string
   image_path: string | null
@@ -58,6 +59,7 @@ export default async function AdminProductsPage({
     .select(
       `
         id,
+        loose_inventory(quantity_kg),
         name,
         image_path,
         published,
@@ -202,6 +204,8 @@ export default async function AdminProductsPage({
                       }`}
                     />
                     {stock.toLocaleString('es-AR')}
+                    <span className="block text-xs font-normal text-muted-foreground">cerradas</span>
+                    <span className="mt-1 block text-xs font-bold">{Number(product.loose_inventory?.quantity_kg??0).toLocaleString('es-AR')} kg sueltos</span>
                   </p>
                   <p className="break-words font-extrabold">
                     {variant?.package_price === null || variant?.package_price === undefined

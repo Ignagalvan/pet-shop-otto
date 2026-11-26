@@ -14,27 +14,36 @@ import { StarRating } from './star-rating'
 import { waLink } from '@/lib/whatsapp'
 import { cn } from '@/lib/utils'
 import { FavoriteButton } from './favorite-button'
+import { toKilograms } from '@/lib/sale-quantity'
 
 export function ProductDetailClient({ product, related }: { product: Product; related: Product[] }) {
   const router = useRouter()
   const { addToCart, toggleFavorite, isFavorite, settings } = useStore()
-  const defaultVariant = product.variants?.find((variant) => variant.price === product.price) ?? product.variants?.[0]
+  const defaultVariant = product.variants?.find((variant) => variant.id === product.defaultVariantId) ?? product.variants?.[0]
   const [variantId, setVariantId] = useState(defaultVariant?.id)
   const [quantity, setQuantity] = useState(1)
+  const [looseAmount, setLooseAmount] = useState('1')
+  const [looseUnit, setLooseUnit] = useState<'kg'|'g'>('kg')
   const selected = product.variants?.find((variant) => variant.id === variantId)
   const price = selected?.price ?? product.price
-  const unavailable = product.stock === 'agotado'
+  const isLoose = selected?.mode === 'kg'
+  const kilos = toKilograms(looseAmount,looseUnit)
+  const buyingQuantity = isLoose ? kilos ?? 0 : quantity
+  const stockCount = selected?.stockCount ?? product.stockCount ?? 0
+  const unavailable = stockCount < (isLoose ? 0.001 : 1)
+  const invalidQuantity = buyingQuantity<=0 || buyingQuantity>stockCount || (isLoose && kilos===null)
   const ordered = product.stock === 'pedido'
   const favorite = isFavorite(product.id)
   const discount = discountPercent(product.price, product.oldPrice)
 
   const add = () => {
+    if (invalidQuantity || unavailable) return
     addToCart(product, {
       variantId: selected?.id,
       variantLabel: selected?.label,
       saleMode: selected?.mode,
       unitPrice: price,
-      quantity,
+      quantity: buyingQuantity,
     })
   }
 
@@ -85,8 +94,8 @@ export function ProductDetailClient({ product, related }: { product: Product; re
                 <div className="flex flex-wrap gap-2">
                   {product.variants.map((variant) => (
                     <button key={variant.id} onClick={() => setVariantId(variant.id)} className={cn('rounded-xl border px-4 py-3 text-left transition-all', variant.id === variantId ? 'border-brand bg-brand-light ring-1 ring-brand' : 'border-border bg-card hover:border-brand/50')}>
-                      <span className="block text-sm font-bold">{variant.label}</span>
-                      <span className="text-xs text-muted-foreground">{formatPrice(variant.price)}</span>
+                      <span className="block text-sm font-bold">{variant.mode==='kg'?'Suelto':`Bolsa cerrada · ${variant.label}`}</span>
+                      <span className="text-xs text-muted-foreground">{formatPrice(variant.price)}{variant.mode==='kg'?' / kg':''}</span>
                     </button>
                   ))}
                 </div>
@@ -96,28 +105,33 @@ export function ProductDetailClient({ product, related }: { product: Product; re
             )}
 
             <div className="mt-7 flex flex-wrap items-baseline gap-3">
-              <span className="text-3xl font-extrabold">{formatPrice(price)}</span>
+              <span className="text-3xl font-extrabold">{formatPrice(price*(isLoose?buyingQuantity:1))}</span>
               {product.oldPrice && price === product.price && <span className="text-base text-muted-foreground line-through">{formatPrice(product.oldPrice)}</span>}
             </div>
             {product.installments && <p className="mt-1 text-sm font-semibold text-success">{product.installments}</p>}
-            <div className="mt-4"><StockBadge status={product.stock} count={product.stockCount} /></div>
+            <div className="mt-4">{isLoose ? <p className="text-sm font-bold text-success">{stockCount.toLocaleString('es-AR')} kg sueltos disponibles · {formatPrice(price)} por kg</p> : <StockBadge status={unavailable?'agotado':stockCount<=3?'poco':'disponible'} count={stockCount} />}</div>
+            {isLoose && <div className="mt-4 rounded-xl border bg-secondary/40 p-4">
+              <label htmlFor="loose-amount" className="mb-2 block text-sm font-bold">¿Cuánto querés llevar suelto?</label>
+              <div className="flex gap-2"><input id="loose-amount" type="number" min={looseUnit==='g'?1:0.001} step={looseUnit==='g'?1:0.001} value={looseAmount} onChange={event=>setLooseAmount(event.target.value)} className="h-12 min-w-0 flex-1 rounded-xl border bg-white px-3" /><select aria-label="Unidad del peso suelto" value={looseUnit} onChange={event=>{const unit=event.target.value as 'g'|'kg';if(kilos!==null)setLooseAmount(String(unit==='g'?Math.round(kilos*1000):kilos));setLooseUnit(unit)}} className="rounded-xl border bg-white px-3"><option value="kg">kg</option><option value="g">gramos</option></select></div>
+              {invalidQuantity && <p role="alert" className="mt-2 text-sm text-destructive">Ingresá un peso válido en gramos enteros, hasta {stockCount.toLocaleString('es-AR')} kg disponibles.</p>}
+            </div>}
 
             <div className="mt-7 flex gap-3">
-              <div className="flex h-12 items-center rounded-xl border border-border bg-card">
+              {!isLoose && <div className="flex h-12 items-center rounded-xl border border-border bg-card">
                 <button disabled={quantity === 1} onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="flex size-11 items-center justify-center disabled:opacity-40" aria-label="Restar cantidad"><Minus className="size-4" /></button>
                 <span className="w-8 text-center font-extrabold">{quantity}</span>
                 <button onClick={() => setQuantity((value) => value + 1)} className="flex size-11 items-center justify-center" aria-label="Sumar cantidad"><Plus className="size-4" /></button>
-              </div>
+              </div>}
               {unavailable ? (
                 <a href={waLink(`Hola, quiero saber cuándo vuelve a ingresar ${product.name}.`, settings.whatsappNumber)} target="_blank" rel="noreferrer" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-white"><MessageCircle className="size-5" /> Consultar disponibilidad</a>
               ) : ordered ? (
                 <Link href={`/pedidos-especiales?producto=${encodeURIComponent(product.name)}`} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brown px-4 text-sm font-bold text-white"><MessageCircle className="size-5" /> Encargar producto</Link>
               ) : (
-                <button onClick={add} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-white transition-colors hover:bg-brand/90"><ShoppingCart className="size-5" /> Agregar al carrito</button>
+                <button disabled={invalidQuantity} onClick={add} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-white transition-colors hover:bg-brand/90 disabled:opacity-50"><ShoppingCart className="size-5" /> Agregar al carrito</button>
               )}
             </div>
             {!unavailable && !ordered && (
-              <button onClick={() => { add(); router.push('/checkout') }} className="mt-3 h-12 w-full rounded-xl border-2 border-brand text-sm font-extrabold text-brand transition-colors hover:bg-brand-light">
+              <button disabled={invalidQuantity} onClick={() => { if(!invalidQuantity){add(); router.push('/checkout')} }} className="mt-3 h-12 w-full rounded-xl border-2 border-brand text-sm font-extrabold text-brand transition-colors hover:bg-brand-light disabled:opacity-50">
                 Comprar ahora
               </button>
             )}

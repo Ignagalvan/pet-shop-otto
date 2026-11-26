@@ -13,6 +13,8 @@ import { createSupabaseServerClient } from './supabase/server'
 type NamedRelation = { name: string; slug?: string } | Array<{ name: string; slug?: string }> | null
 
 type PublicProductRow = {
+  stock_group_key: string
+  loose_inventory: { quantity_kg: number; price_per_kg: number } | null
   id: string
   name: string
   slug: string
@@ -39,6 +41,8 @@ type PublicProductRow = {
 export type CatalogOption = { slug: string; label: string }
 
 const publicProductSelect = `
+  stock_group_key,
+  loose_inventory ( quantity_kg, price_per_kg ),
   id,
   name,
   slug,
@@ -97,7 +101,7 @@ function mapProduct(row: PublicProductRow, baseUrl: string): Product | null {
   const activeVariants = row.product_variants.filter(
     (variant) =>
       (variant.sells_by_package && Number(variant.package_price) > 0) ||
-      (variant.sells_by_kg && Number(variant.kg_price) > 0),
+      (variant.sells_by_kg && Number(row.loose_inventory?.price_per_kg) > 0),
   )
   const primary = activeVariants.find((variant) => variant.sells_by_package) ?? activeVariants[0]
 
@@ -111,14 +115,16 @@ function mapProduct(row: PublicProductRow, baseUrl: string): Product | null {
         label: variant.presentation || 'Presentación',
         price: Number(variant.package_price),
         mode: 'package',
+        stockCount: inventoryQuantity(variant.inventory),
       })
     }
-    if (variant.sells_by_kg && Number(variant.kg_price) > 0) {
+    if (variant.sells_by_kg && Number(row.loose_inventory?.price_per_kg) > 0) {
       options.push({
         id: `${variant.id}:kg`,
-        label: '1 kg',
-        price: Number(variant.kg_price),
+        label: 'Suelto',
+        price: Number(row.loose_inventory?.price_per_kg ?? 0),
         mode: 'kg',
+        stockCount: Number(row.loose_inventory?.quantity_kg ?? 0),
       })
     }
     return options
@@ -166,21 +172,19 @@ function mapProduct(row: PublicProductRow, baseUrl: string): Product | null {
     important: row.on_request
       ? 'Este producto se consigue a pedido. Te confirmamos disponibilidad y condiciones antes de avanzar.'
       : undefined,
-    variants: variants.length > 1 ? variants : undefined,
+    variants,
   }
 }
 
 async function fetchPublicProducts(slug?: string): Promise<Product[]> {
   const supabase = await createSupabaseServerClient()
-  let query = supabase
+  const query = supabase
     .from('products')
     .select(publicProductSelect)
     .eq('published', true)
     .eq('active', true)
     .order('featured', { ascending: false })
     .order('updated_at', { ascending: false })
-
-  if (slug) query = query.eq('slug', slug)
 
   const { data, error } = await query
   if (error) {
@@ -189,9 +193,32 @@ async function fetchPublicProducts(slug?: string): Promise<Product[]> {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  return (data as unknown as PublicProductRow[])
-    .map((row) => mapProduct(row, baseUrl))
-    .filter((product): product is Product => Boolean(product))
+  const grouped = new Map<string, PublicProductRow[]>()
+  for (const row of data as unknown as PublicProductRow[]) {
+    const key = row.stock_group_key || row.id
+    grouped.set(key, [...(grouped.get(key) ?? []), row])
+  }
+  const products: Product[] = []
+  for (const rows of grouped.values()) {
+    rows.sort((a,b)=>a.id.localeCompare(b.id))
+    if (slug && !rows.some(row => row.slug === slug)) continue
+    const mapped = rows.map(row => mapProduct(row, baseUrl)).filter((p): p is Product => Boolean(p))
+    if (!mapped.length) continue
+    const first = mapped[0]
+    const options = mapped.flatMap(p => p.variants ?? [])
+    const closed = options.filter(v => v.mode !== 'kg').sort((a,b) => a.label.localeCompare(b.label, 'es', {numeric:true}))
+    // One common loose balance and price, regardless of the bag opened.
+    const loose = options.find(v => v.mode === 'kg' && v.price > 0)
+    const variants = [...closed, ...(loose ? [loose] : [])]
+    const available = variants.find(v => (v.stockCount ?? 0) >= (v.mode === 'kg' ? 0.001 : 1)) ?? variants[0]
+    if (!available) continue
+    products.push({...first, sourceSlugs:rows.map(row=>row.slug), name:first.name.replace(/\d+(?:[.,]\d+)?\s*(?:kgs?|grs?|g)\b/gi,'').replace(/\s+/g,' ').trim(), variants,
+      defaultVariantId:available.id, defaultSaleMode:available.mode, price:available.price,
+      presentation: variants.length > 1 ? (loose ? 'Elegí bolsa cerrada o suelto' : 'Elegí el tamaño de la bolsa') : available.mode === 'kg' ? 'Suelto · precio por kg' : available.label,
+      stock: first.stock === 'pedido' ? 'pedido' : variants.some(v=>(v.stockCount??0)>0) ? 'disponible' : 'agotado',
+      stockCount:undefined})
+  }
+  return products
 }
 
 export const getPublicProducts = cache(async () => fetchPublicProducts())

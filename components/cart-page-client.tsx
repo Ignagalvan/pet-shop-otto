@@ -2,13 +2,14 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Bookmark, Minus, Plus, ShoppingCart, Trash2, Truck } from 'lucide-react'
+import { Bookmark, ShoppingCart, Trash2, Truck } from 'lucide-react'
+import { CartQuantity } from './cart-quantity'
 import { useStore } from './store-provider'
 import { formatPrice } from '@/lib/format'
 import { calculateShipping } from '@/lib/store-settings'
 
 export function CartPageClient() {
-  const { items, subtotal, removeFromCart, updateQuantity, toggleSaveForLater, settings } = useStore()
+  const { items, subtotal, removeFromCart, toggleSaveForLater, settings } = useStore()
   const active = items.filter((item) => !item.savedForLater)
   const saved = items.filter((item) => item.savedForLater)
   const shipping = settings.deliveryEnabled
@@ -44,11 +45,7 @@ export function CartPageClient() {
                 <Link href={`/producto/${item.product.slug}`} className="mt-1 line-clamp-2 font-bold hover:text-brand">{item.product.name}</Link>
                 <p className="mt-1 text-xs text-muted-foreground">{item.variantLabel ?? item.product.presentation}</p>
                 <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-3">
-                  <div className="flex items-center rounded-xl border border-border">
-                    <button disabled={item.quantity === 1} onClick={() => updateQuantity(item.key, item.quantity - 1)} className="flex size-9 items-center justify-center disabled:opacity-40" aria-label="Restar"><Minus className="size-4" /></button>
-                    <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.key, item.quantity + 1)} className="flex size-9 items-center justify-center" aria-label="Sumar"><Plus className="size-4" /></button>
-                  </div>
+                  <CartQuantity item={item} />
                   <span className="text-lg font-extrabold">{formatPrice(item.unitPrice * item.quantity)}</span>
                 </div>
                 <div className="mt-3 flex gap-4 text-xs font-bold">
