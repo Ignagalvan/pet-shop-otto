@@ -4,6 +4,31 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { requireStaff } from '@/lib/supabase/staff'
+import { publicationMissingFields } from '@/lib/product-publication'
+
+export async function setProductPublicationAction(ids: string[], published: boolean) {
+  const parsed = z.object({ ids: z.array(z.uuid()).min(1).max(30), published: z.boolean() }).safeParse({ ids, published })
+  if (!parsed.success) return { updated: 0, blocked: [], error: 'Seleccioná entre 1 y 30 productos de esta página.' }
+  const { supabase } = await requireStaff()
+  const uniqueIds = [...new Set(parsed.data.ids)]
+  const { data, error } = await supabase.from('products').select('id, name, image_path, description, category_id, product_pet_types(pet_type_id), product_variants(active, sells_by_package, sells_by_kg, package_price, kg_price)').in('id', uniqueIds)
+  if (error || !data || data.length !== uniqueIds.length) return { updated: 0, blocked: [], error: 'No pudimos verificar todos los productos. Recargá e intentá nuevamente.' }
+  const blocked = published ? data.flatMap(product => {
+    const missing = publicationMissingFields(product)
+    return missing.length ? [{ id: product.id, name: product.name, reason: `Falta: ${missing.join(', ')}.` }] : []
+  }) : []
+  const blockedIds = new Set(blocked.map(product => product.id))
+  const allowed = uniqueIds.filter(id => !blockedIds.has(id))
+  if (allowed.length) {
+    const changes = published ? { published: true, active: true } : { published: false }
+    const result = await supabase.from('products').update(changes).in('id', allowed).select('id')
+    if (result.error || result.data?.length !== allowed.length) return { updated: 0, blocked, error: 'No pudimos guardar la visibilidad. Recargá para comprobar el estado.' }
+    for (const path of ['/admin', '/admin/productos', '/', '/productos', '/favoritos']) revalidatePath(path)
+    revalidatePath('/admin/productos/[id]', 'page')
+    revalidatePath('/producto/[slug]', 'page')
+  }
+  return { updated: allowed.length, blocked, error: null }
+}
 
 const productSchema = z.object({
   productId: z.uuid(),

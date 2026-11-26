@@ -4,6 +4,7 @@ import { ImageOff, PackageSearch, Pencil, Search } from 'lucide-react'
 import { ProductPagination } from '@/components/admin/product-pagination'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getProductImageUrl } from '@/lib/supabase/storage'
+import { ProductSelection, ProductSelectionCheckbox, ProductVisibilityButton } from '@/components/admin/product-selection'
 
 export const metadata = { title: 'Administrar productos' }
 
@@ -146,8 +147,9 @@ export default async function AdminProductsPage({
         </button>
       </form>
 
-      <div className="mt-5 overflow-hidden rounded-2xl border bg-white shadow-sm">
-        <div className="hidden grid-cols-[minmax(280px,1.5fr)_150px_110px_130px_120px_52px] gap-4 border-b bg-muted/55 px-5 py-3 text-xs font-extrabold uppercase tracking-wide text-muted-foreground lg:grid">
+      <ProductSelection key={`${query}:${status}:${page}`} ids={products.map(product => product.id)}>
+      <div className="mt-5 min-w-0 overflow-hidden rounded-2xl border bg-white shadow-sm">
+        <div className="hidden grid-cols-[minmax(0,1fr)_100px_70px_110px_100px_110px] gap-3 border-b bg-muted/55 px-5 py-3 text-xs font-extrabold uppercase tracking-wide text-muted-foreground xl:grid">
           <span>Producto</span>
           <span>Marca</span>
           <span>Stock</span>
@@ -165,9 +167,10 @@ export default async function AdminProductsPage({
               return (
                 <article
                   key={product.id}
-                  className="grid gap-3 p-4 transition hover:bg-primary/[0.025] lg:grid-cols-[minmax(280px,1.5fr)_150px_110px_130px_120px_52px] lg:items-center lg:gap-4 lg:px-5"
+                  className="grid min-w-0 gap-3 p-4 transition hover:bg-primary/[0.025] xl:grid-cols-[minmax(0,1fr)_100px_70px_110px_100px_110px] xl:items-center xl:gap-3 xl:px-5"
                 >
                   <div className="flex min-w-0 items-center gap-3">
+                    <ProductSelectionCheckbox id={product.id} name={product.name} />
                     <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-background">
                       {imageUrl ? (
                         <Image
@@ -182,14 +185,14 @@ export default async function AdminProductsPage({
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate font-extrabold">{product.name}</p>
+                      <Link href={`/admin/productos/${product.id}`} className="block break-words font-extrabold text-primary underline-offset-2 hover:underline">{product.name}</Link>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {variant?.presentation || product.categories?.name || 'Sin presentación'}
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm">
-                    <span className="mr-1 text-xs text-muted-foreground lg:hidden">Marca:</span>
+                  <p className="break-words text-sm">
+                    <span className="mr-1 text-xs text-muted-foreground xl:hidden">Marca:</span>
                     {product.brands?.name || 'Sin marca'}
                   </p>
                   <p className="text-sm font-bold">
@@ -200,7 +203,7 @@ export default async function AdminProductsPage({
                     />
                     {stock.toLocaleString('es-AR')}
                   </p>
-                  <p className="font-extrabold">
+                  <p className="break-words font-extrabold">
                     {variant?.package_price === null || variant?.package_price === undefined
                       ? '—'
                       : currency.format(variant.package_price)}
@@ -216,13 +219,17 @@ export default async function AdminProductsPage({
                       {product.published ? 'Publicado' : 'Borrador'}
                     </span>
                   </div>
+                  <div className="flex flex-wrap gap-2 xl:flex-col">
                   <Link
                     href={`/admin/productos/${product.id}`}
-                    className="inline-flex size-10 items-center justify-center rounded-xl border text-primary transition hover:bg-primary hover:text-white"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 font-bold text-white transition hover:bg-primary/90"
                     aria-label={`Editar ${product.name}`}
                   >
                     <Pencil className="size-4" />
+                    Editar
                   </Link>
+                  <ProductVisibilityButton id={product.id} published={product.published} />
+                  </div>
                 </article>
               )
             })}
@@ -233,6 +240,7 @@ export default async function AdminProductsPage({
           </div>
         )}
       </div>
+      </ProductSelection>
 
       <ProductPagination
         currentPage={page}
