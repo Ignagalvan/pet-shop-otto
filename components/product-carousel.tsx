@@ -47,7 +47,7 @@ export function ProductCarousel({ products }: { products: Product[] }) {
         ref={ref}
         onScroll={updateProgress}
         aria-label="Carrusel de productos. Deslizá horizontalmente para ver más."
-        className="no-scrollbar -mx-4 flex touch-pan-x snap-x snap-proximity items-stretch gap-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-3 pr-[18vw] sm:pr-4"
+        className="no-scrollbar -mx-4 flex touch-auto snap-x snap-proximity items-stretch gap-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-3 pr-[18vw] sm:pr-4"
       >
         {products.map((p) => (
           <div

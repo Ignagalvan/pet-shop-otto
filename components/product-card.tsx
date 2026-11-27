@@ -117,7 +117,7 @@ export function ProductCard({ product }: { product: Product }) {
               Ver pedido
             </Link>
           ) : (product.variants?.length ?? 0)>1 || product.defaultSaleMode==='kg' ? (
-            <Link href={`/producto/${product.slug}`} className="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl bg-brand px-3 text-sm font-bold text-white">Elegir presentación</Link>
+            <Link href={`/producto/${product.slug}`} className="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl bg-brand px-3 text-center text-sm font-bold text-white">Ver opciones de compra</Link>
           ) : (
             <button
               onClick={() => addToCart(product)}
@@ -129,7 +129,7 @@ export function ProductCard({ product }: { product: Product }) {
           )}
           <a
             href={waLink(
-              `Hola! Quiero consultar por el producto "${product.name}" (${product.presentation}).`,
+              `Hola! Quiero consultar por el producto "${product.name}".`,
               settings.whatsappNumber,
             )}
             target="_blank"
