@@ -8,9 +8,9 @@ import {
   hasValidTransferDetails,
   normalizeInstagram,
   normalizeWhatsappNumber,
-  type BusinessDay,
   type PaymentMethod,
 } from '@/lib/store-settings'
+import { readBusinessHoursForm } from '@/lib/business-hours-form'
 
 export type SettingsActionState = {
   ok: boolean
@@ -34,53 +34,6 @@ const settingsSchema = z.object({
   transferInstructions: z.string().trim().max(280),
   closedStoreMessage: z.string().trim().min(10).max(280),
 })
-
-const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
-
-function readHours(formData: FormData) {
-  const days: BusinessDay[] = []
-
-  for (let day = 0; day < 7; day += 1) {
-    const enabled = formData.get(`day-${day}-enabled`) === 'on'
-    const firstStart = String(formData.get(`day-${day}-start-1`) ?? '')
-    const firstEnd = String(formData.get(`day-${day}-end-1`) ?? '')
-    const secondStart = String(formData.get(`day-${day}-start-2`) ?? '')
-    const secondEnd = String(formData.get(`day-${day}-end-2`) ?? '')
-    const shifts = []
-
-    if (enabled) {
-      if (
-        !TIME_PATTERN.test(firstStart) ||
-        !TIME_PATTERN.test(firstEnd) ||
-        firstStart >= firstEnd
-      ) {
-        throw new Error('Revisá el primer horario de cada día habilitado.')
-      }
-      shifts.push({ start: firstStart, end: firstEnd })
-
-      if (secondStart || secondEnd) {
-        if (
-          !TIME_PATTERN.test(secondStart) ||
-          !TIME_PATTERN.test(secondEnd) ||
-          secondStart >= secondEnd ||
-          firstEnd > secondStart
-        ) {
-          throw new Error(
-            'Revisá el segundo horario: debe estar completo y no superponerse.',
-          )
-        }
-        shifts.push({ start: secondStart, end: secondEnd })
-      }
-    }
-
-    days.push({ day, enabled, shifts })
-  }
-
-  return {
-    timeZone: 'America/Argentina/Cordoba',
-    days,
-  }
-}
 
 export async function updateStoreSettingsAction(
   _previousState: SettingsActionState,
@@ -176,7 +129,7 @@ export async function updateStoreSettingsAction(
 
   let businessHours
   try {
-    businessHours = readHours(formData)
+    businessHours = readBusinessHoursForm(formData)
   } catch (error) {
     return {
       ok: false,

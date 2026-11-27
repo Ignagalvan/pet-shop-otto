@@ -127,7 +127,7 @@ function normalizeBusinessHours(value: unknown): BusinessHours {
     ) as Record<string, unknown> | undefined
 
     const shifts = Array.isArray(source?.shifts)
-      ? source.shifts.filter(validShift).slice(0, 2)
+      ? source.shifts.filter(validShift).sort((a, b) => a.start.localeCompare(b.start))
       : []
 
     return {

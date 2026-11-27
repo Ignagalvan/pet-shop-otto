@@ -127,7 +127,9 @@ export function formatBusinessHours(hours: BusinessHours) {
       const dayLabel =
         days.length === 1
           ? DAY_LABELS[days[0]]
-          : `${DAY_LABELS[days[0]]} a ${DAY_LABELS[days.at(-1)!]}`
+          : days.every((day, index) => index === 0 || day === days[index - 1] + 1)
+            ? `${DAY_LABELS[days[0]]} a ${DAY_LABELS[days.at(-1)!]}`
+            : days.map(day => DAY_LABELS[day]).join(', ')
       return `${dayLabel}: ${shiftsLabel(schedule.shifts)}`
     })
     .join(' · ')

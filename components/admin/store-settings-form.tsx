@@ -22,6 +22,7 @@ import type {
   PaymentMethod,
   StoreSettings,
 } from '@/lib/store-settings'
+import { DaySchedule } from './day-schedule'
 
 const INITIAL_STATE: SettingsActionState = { ok: false, message: '' }
 const DAYS = [
@@ -116,7 +117,7 @@ export function StoreSettingsForm({
       <SettingsSection
         icon={Clock3}
         title="Horarios de atención"
-        description="Podés abrir uno o dos turnos por día. El aviso de local cerrado se actualiza automáticamente."
+        description="Usá un horario corrido o agregá los turnos que necesites en cada día. Podés quitar turnos y marcar días cerrados. El aviso de local cerrado se actualiza al guardar."
       >
         <div className="space-y-3">
           {DAYS.map((label, day) => {
@@ -361,66 +362,6 @@ function Field({
         </span>
       )}
     </label>
-  )
-}
-
-function DaySchedule({
-  day,
-  label,
-  schedule,
-}: {
-  day: number
-  label: string
-  schedule: BusinessDay
-}) {
-  const first = schedule.shifts[0]
-  const second = schedule.shifts[1]
-  return (
-    <div className="grid gap-3 rounded-2xl border border-border bg-[#fbfcfe] p-3 sm:grid-cols-[130px_1fr_1fr] sm:items-center">
-      <label className="flex items-center gap-2 text-sm font-extrabold">
-        <input
-          type="checkbox"
-          name={`day-${day}-enabled`}
-          defaultChecked={schedule.enabled}
-          className="size-4 accent-primary"
-        />
-        {label}
-      </label>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <input
-          type="time"
-          name={`day-${day}-start-1`}
-          defaultValue={first?.start ?? '08:30'}
-          aria-label={`${label}, apertura del primer turno`}
-          className={input.replace('mt-2 ', '')}
-        />
-        <span className="text-xs font-bold text-muted-foreground">a</span>
-        <input
-          type="time"
-          name={`day-${day}-end-1`}
-          defaultValue={first?.end ?? '13:00'}
-          aria-label={`${label}, cierre del primer turno`}
-          className={input.replace('mt-2 ', '')}
-        />
-      </div>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <input
-          type="time"
-          name={`day-${day}-start-2`}
-          defaultValue={second?.start ?? ''}
-          aria-label={`${label}, apertura del segundo turno`}
-          className={input.replace('mt-2 ', '')}
-        />
-        <span className="text-xs font-bold text-muted-foreground">a</span>
-        <input
-          type="time"
-          name={`day-${day}-end-2`}
-          defaultValue={second?.end ?? ''}
-          aria-label={`${label}, cierre del segundo turno`}
-          className={input.replace('mt-2 ', '')}
-        />
-      </div>
-    </div>
   )
 }
 
