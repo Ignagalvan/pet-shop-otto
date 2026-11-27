@@ -23,6 +23,9 @@ it('separa bolsas y suelto, apertura, compras, reintentos y cancelaciones en Pos
  const [{id:pet}]=(await db.query<{id:number}>(`select id from pet_types limit 1`)).rows
  await db.exec(`insert into brands(name,slug) values('Prueba','prueba');insert into product_pet_types values('00000000-0000-4000-8000-000000000002',${pet});update products set image_path='test.webp',description='Solo prueba local',category_id=${category},brand_id=(select id from brands limit 1),published=true;`)
  const checkout=`select create_public_order('00000000-0000-4000-8000-000000000004','{"name":"Prueba aislada","phone":"0000000000"}','{"type":"retiro"}','local','[{"variantId":"00000000-0000-4000-8000-000000000003","mode":"kg","quantity":0.5},{"variantId":"00000000-0000-4000-8000-000000000003","mode":"package","quantity":1}]') as result`
+ // Accepting backorders must not bypass stock checks or stock deductions.
+ await db.exec(`update products set on_request=true;update product_variants set stock_status='on_request'`)
+ await expect(db.query(checkout.replace('000000000004','000000000099').replace('"quantity":1}', '"quantity":3}'))).rejects.toThrow('stock')
  const order=(await db.query<{result:{id:string;subtotal:number}}>(checkout)).rows[0].result
  expect(Number(order.subtotal)).toBe(10750)
  expect(await state()).toEqual({closed:'1.000',loose:'9.500'})
@@ -56,7 +59,7 @@ it('separa bolsas y suelto, apertura, compras, reintentos y cancelaciones en Pos
  // opens bags or replaces loose stock. Unrelated edits retain that kg price.
  const productId='00000000-0000-4000-8000-000000000002'
  const variantId='00000000-0000-4000-8000-000000000003'
- const pricingData={name:'ALIMENTO PERRO 10KG',description:'Solo prueba local',brandId:1,categoryId:category,petTypeIds:[pet],presentation:'10 kg',packageWeightKg:10,purchaseCost:10000.25,packageMarginPercent:35,kgMarginPercent:60,stockQuantity:1,packagePrice:13600,kgPrice:1700,roundingStep:100,syncLoosePrice:true,sellsByKg:true,published:true}
+ const pricingData={name:'ALIMENTO PERRO 10KG',description:'Solo prueba local',brandId:1,categoryId:category,petTypeIds:[pet],presentation:'10 kg',packageWeightKg:10,purchaseCost:10000.25,packageMarginPercent:35,kgMarginPercent:60,stockQuantity:1,packagePrice:13600,kgPrice:1700,roundingStep:100,syncLoosePrice:true,sellsByKg:true,published:true,onRequest:true}
  await db.query(`select update_admin_product($1::uuid,$2::uuid,$3::jsonb)`,[productId,variantId,JSON.stringify(pricingData)])
  expect((await db.query<{price:string;qty:string}>(`select price_per_kg::text price,quantity_kg::text qty from loose_inventory`)).rows[0]).toEqual({price:'1700.00',qty:'1.000'})
  expect((await db.query<{price:string}>(`select package_price::text price from product_variants where id=$1`,[variantId])).rows[0].price).toBe('13600.00')

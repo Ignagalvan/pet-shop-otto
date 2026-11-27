@@ -114,7 +114,7 @@ export function ProductCard({ product }: { product: Product }) {
               href={`/producto/${product.slug}`}
               className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand/90"
             >
-              Ver pedido
+              Encargar producto
             </Link>
           ) : (product.variants?.length ?? 0)>1 || product.defaultSaleMode==='kg' ? (
             <Link href={`/producto/${product.slug}`} className="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl bg-brand px-3 text-center text-sm font-bold text-white">Ver opciones de compra</Link>

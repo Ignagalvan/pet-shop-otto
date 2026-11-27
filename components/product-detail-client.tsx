@@ -15,10 +15,11 @@ import { waLink } from '@/lib/whatsapp'
 import { cn } from '@/lib/utils'
 import { FavoriteButton } from './favorite-button'
 import { toKilograms } from '@/lib/sale-quantity'
+import { specialOrderLink, splitPurchase } from '@/lib/purchase-split'
 
 export function ProductDetailClient({ product, related }: { product: Product; related: Product[] }) {
   const router = useRouter()
-  const { addToCart, toggleFavorite, isFavorite, settings } = useStore()
+  const { addToCart, toggleFavorite, isFavorite, settings, items } = useStore()
   const defaultVariant = product.variants?.find((variant) => variant.id === product.defaultVariantId) ?? product.variants?.[0]
   const [variantId, setVariantId] = useState(defaultVariant?.id)
   const [quantity, setQuantity] = useState(1)
@@ -31,8 +32,11 @@ export function ProductDetailClient({ product, related }: { product: Product; re
   const buyingQuantity = isLoose ? kilos ?? 0 : quantity
   const stockCount = selected?.stockCount ?? product.stockCount ?? 0
   const unavailable = stockCount < (isLoose ? 0.001 : 1)
-  const invalidQuantity = buyingQuantity<=0 || buyingQuantity>stockCount || (isLoose && kilos===null)
-  const ordered = product.stock === 'pedido'
+  const canRequest = selected?.acceptsBackorder ?? product.acceptsBackorder ?? product.stock === 'pedido'
+  const inCart = items.filter(item => !item.savedForLater && item.product.id === product.id && (isLoose ? item.saleMode === 'kg' : item.variantId === (selected?.id ?? product.defaultVariantId))).reduce((total, item) => total + item.quantity, 0)
+  const split = splitPurchase(buyingQuantity, stockCount, inCart, isLoose)
+  const invalidQuantity = !split.valid || split.purchase <= 0 || (!canRequest && split.missing > 0)
+  const requestHref = specialOrderLink(product.name, selected?.label ?? product.presentation, split.missing || (unavailable ? buyingQuantity : 1), isLoose)
   const favorite = isFavorite(product.id)
   const discount = discountPercent(product.price, product.oldPrice)
 
@@ -43,8 +47,12 @@ export function ProductDetailClient({ product, related }: { product: Product; re
       variantLabel: selected?.label,
       saleMode: selected?.mode,
       unitPrice: price,
-      quantity: buyingQuantity,
+      quantity: split.purchase,
     })
+    if (split.missing > 0) {
+      if (isLoose) setLooseAmount(String(looseUnit === 'g' ? Math.round(split.missing * 1000) : split.missing))
+      else setQuantity(split.missing)
+    } else if (!isLoose) setQuantity(1)
   }
 
   return (
@@ -105,36 +113,39 @@ export function ProductDetailClient({ product, related }: { product: Product; re
             )}
 
             <div className="mt-7 flex flex-wrap items-baseline gap-3">
-              <span className="text-3xl font-extrabold">{formatPrice(price*(isLoose?buyingQuantity:1))}</span>
+              <span className="text-3xl font-extrabold">{formatPrice(price*(isLoose?(canRequest && split.missing > 0 ? (split.purchase || 1) : buyingQuantity):1))}</span>
               {product.oldPrice && price === product.price && <span className="text-base text-muted-foreground line-through">{formatPrice(product.oldPrice)}</span>}
             </div>
             {product.installments && <p className="mt-1 text-sm font-semibold text-success">{product.installments}</p>}
+            {unavailable && canRequest && <p className="mt-2 text-sm font-semibold text-brown">Precio de referencia. El precio y la entrega del encargo se confirman antes de pagar.</p>}
             <div className="mt-4">{isLoose ? <p className="text-sm font-bold text-success">{stockCount.toLocaleString('es-AR')} kg sueltos disponibles · {formatPrice(price)} por kg</p> : <StockBadge status={unavailable?'agotado':stockCount<=3?'poco':'disponible'} count={stockCount} />}</div>
             {isLoose && <div className="mt-4 rounded-xl border bg-secondary/40 p-4">
               <label htmlFor="loose-amount" className="mb-2 block text-sm font-bold">¿Cuánto querés llevar suelto?</label>
               <div className="flex gap-2"><input id="loose-amount" type="number" min={looseUnit==='g'?1:0.001} step={looseUnit==='g'?1:0.001} value={looseAmount} onChange={event=>setLooseAmount(event.target.value)} className="h-12 min-w-0 flex-1 rounded-xl border bg-white px-3" /><select aria-label="Unidad del peso suelto" value={looseUnit} onChange={event=>{const unit=event.target.value as 'g'|'kg';if(kilos!==null)setLooseAmount(String(unit==='g'?Math.round(kilos*1000):kilos));setLooseUnit(unit)}} className="rounded-xl border bg-white px-3"><option value="kg">kg</option><option value="g">gramos</option></select></div>
-              {invalidQuantity && <p role="alert" className="mt-2 text-sm text-destructive">Ingresá un peso válido en gramos enteros, hasta {stockCount.toLocaleString('es-AR')} kg disponibles.</p>}
+              {!split.valid && <p role="alert" className="mt-2 text-sm text-destructive">Ingresá un peso válido en gramos enteros.</p>}
             </div>}
+            {split.valid && split.missing > 0 && <p role="status" className="mt-4 rounded-xl border border-brown/20 bg-brown/5 p-3 text-sm leading-6">{split.purchase > 0 ? `Podés comprar ${split.purchase.toLocaleString('es-AR')} ${isLoose ? 'kg' : 'unidad(es)'} disponibles.` : 'No quedan más unidades disponibles para agregar; revisá también lo que ya tenés en el carrito.'} {canRequest ? `El faltante (${split.missing.toLocaleString('es-AR')} ${isLoose ? 'kg' : 'unidad(es)'}) se encarga por separado, con precio y entrega a confirmar.` : 'No se puede comprar más que el stock disponible.'}</p>}
 
             <div className="mt-7 flex gap-3">
               {!isLoose && <div className="flex h-12 items-center rounded-xl border border-border bg-card">
                 <button disabled={quantity === 1} onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="flex size-11 items-center justify-center disabled:opacity-40" aria-label="Restar cantidad"><Minus className="size-4" /></button>
                 <span className="w-8 text-center font-extrabold">{quantity}</span>
-                <button onClick={() => setQuantity((value) => value + 1)} className="flex size-11 items-center justify-center" aria-label="Sumar cantidad"><Plus className="size-4" /></button>
+                <button onClick={() => setQuantity((value) => Math.min(999, value + 1))} className="flex size-11 items-center justify-center" aria-label="Sumar cantidad"><Plus className="size-4" /></button>
               </div>}
-              {unavailable ? (
+              {unavailable && canRequest ? (
+                <Link href={requestHref} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brown px-4 text-center text-sm font-bold text-white"><MessageCircle className="size-5" /> Encargar producto</Link>
+              ) : unavailable ? (
                 <a href={waLink(`Hola, quiero saber cuándo vuelve a ingresar ${product.name}.`, settings.whatsappNumber)} target="_blank" rel="noreferrer" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-white"><MessageCircle className="size-5" /> Consultar disponibilidad</a>
-              ) : ordered ? (
-                <Link href={`/pedidos-especiales?producto=${encodeURIComponent(product.name)}`} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brown px-4 text-sm font-bold text-white"><MessageCircle className="size-5" /> Encargar producto</Link>
               ) : (
-                <button disabled={invalidQuantity} onClick={add} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-white transition-colors hover:bg-brand/90 disabled:opacity-50"><ShoppingCart className="size-5" /> Agregar al carrito</button>
+                <button disabled={invalidQuantity} onClick={add} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-center text-sm font-bold text-white transition-colors hover:bg-brand/90 disabled:opacity-50"><ShoppingCart className="size-5 shrink-0" />{canRequest && split.missing > 0 && split.purchase > 0 ? `Agregar ${split.purchase.toLocaleString('es-AR')} ${isLoose ? 'kg' : 'disponibles'}` : 'Agregar al carrito'}</button>
               )}
             </div>
-            {!unavailable && !ordered && (
+            {!unavailable && (
               <button disabled={invalidQuantity} onClick={() => { if(!invalidQuantity){add(); router.push('/checkout')} }} className="mt-3 h-12 w-full rounded-xl border-2 border-brand text-sm font-extrabold text-brand transition-colors hover:bg-brand-light disabled:opacity-50">
-                Comprar ahora
+                {canRequest && split.missing > 0 ? 'Comprar solo lo disponible ahora' : 'Comprar ahora'}
               </button>
             )}
+            {canRequest && !unavailable && <Link href={requestHref} className="mt-3 flex min-h-12 items-center justify-center gap-2 rounded-xl border border-brown px-4 py-2 text-center text-sm font-extrabold text-brown"><MessageCircle className="size-4 shrink-0"/>{split.missing > 0 ? `Encargar ${split.missing.toLocaleString('es-AR')} ${isLoose ? 'kg faltantes' : 'faltantes'}` : '¿Necesitás más? Encargar cantidad adicional'}</Link>}
 
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <Info icon={Truck} title="Entrega" text={settings.deliveryEnabled && settings.pickupEnabled ? 'Elegí envío o retiro en el local.' : settings.deliveryEnabled ? 'Disponible con envío a domicilio.' : 'Disponible para retiro en el local.'} />

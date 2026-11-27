@@ -270,7 +270,7 @@ export default async function EditProductPage({
               </label>
               <label className="flex items-start gap-3 rounded-xl border p-3 text-sm">
                 <input name="onRequest" type="checkbox" defaultChecked={product.on_request} className="mt-0.5 size-4 accent-brown" />
-                <span><strong className="block">Producto a pedido</strong>Permite solicitarlo sin stock inmediato.</span>
+                <span><strong className="block">Aceptar encargos</strong>Permite comprar el stock disponible y encargar el faltante por separado.</span>
               </label>
             </div>
             <p className="mt-4 rounded-xl bg-muted/60 p-3 text-xs text-muted-foreground">

@@ -38,3 +38,17 @@ it('agrupa tamaños sin duplicar el suelto, conserva enlaces y elige una present
   expect(products[0].stock).toBe('disponible')
   expect((await getPublicProduct('agility-20'))?.id).toBe(products[0].id)
 })
+
+it('a pedido es adicional: permite comprar stock y encargar solo si está habilitado', async () => {
+  for (const [stock, onRequest, expected] of [[3,true,'disponible'],[0,true,'pedido'],[0,false,'agotado']] as const) {
+    rows.splice(0,rows.length,{
+      id:'available-and-request',name:'ALIMENTO 10KG',slug:'alimento',stock_group_key:'food',on_request:onRequest,
+      brands:{name:'Prueba'},categories:{slug:'alimentos'},product_pet_types:[],
+      product_variants:[{id:'bag',presentation:'10 kg',package_price:10000,sells_by_package:true,sells_by_kg:false,stock_status:'out_of_stock',inventory:{quantity:stock}}],
+    })
+    const product=(await getPublicProducts())[0]
+    expect(product.stock).toBe(expected)
+    expect(product.acceptsBackorder).toBe(onRequest)
+    expect(product.variants?.[0].acceptsBackorder).toBe(onRequest)
+  }
+})

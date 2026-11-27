@@ -25,6 +25,7 @@ export type StockStatus = 'disponible' | 'poco' | 'agotado' | 'pedido'
 export type ProductTag = 'oferta' | 'nuevo' | 'mas-vendido' | 'ultimas'
 
 export interface Variant {
+  acceptsBackorder?: boolean
   id: string
   label: string
   price: number
@@ -41,6 +42,7 @@ export interface Review {
 }
 
 export interface Product {
+  acceptsBackorder?: boolean
   sourceSlugs?: string[]
   id: string
   defaultVariantId?: string

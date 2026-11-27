@@ -10,8 +10,14 @@ const input =
 
 export function SpecialOrderForm({
   whatsappNumber,
+  defaultProduct = '',
+  defaultQuantity = 1,
+  defaultDetails = '',
 }: {
   whatsappNumber: string
+  defaultProduct?: string
+  defaultQuantity?: number
+  defaultDetails?: string
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const [isPending, startTransition] = useTransition()
@@ -121,6 +127,7 @@ export function SpecialOrderForm({
           <input
             required
             name="product"
+            defaultValue={defaultProduct}
             className={input}
             placeholder="Ej. alimento especial, medicamento, rascador..."
           />
@@ -148,7 +155,7 @@ export function SpecialOrderForm({
             type="number"
             min="1"
             max="999"
-            defaultValue="1"
+            defaultValue={defaultQuantity}
             className={input}
           />
         </label>
@@ -156,6 +163,7 @@ export function SpecialOrderForm({
           Detalles
           <textarea
             name="details"
+            defaultValue={defaultDetails}
             maxLength={2000}
             className="mt-2 min-h-28 w-full resize-y rounded-xl border border-border bg-card p-4 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
             placeholder="Tamaño, presentación, sabor, modelo o cualquier dato útil."

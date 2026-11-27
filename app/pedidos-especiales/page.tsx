@@ -13,11 +13,13 @@ const steps = [
   { icon: Truck, title: 'Lo recibís', text: 'Te avisamos cuando llegue para envío o retiro.' },
 ]
 
-export default async function SpecialOrdersPage() {
+export default async function SpecialOrdersPage({searchParams}: {searchParams: Promise<{producto?: string; cantidad?: string; detalle?: string}>}) {
   const settings = await getPublicStoreSettings()
+  const params = await searchParams
+  const quantity = Number(params.cantidad)
   return (
     <>
-      <PageHero eyebrow="Lo conseguimos para vos" title="Productos a pedido" description="Si no está en el catálogo, contanos qué necesitás. Lo buscamos, te cotizamos y recién entonces decidís." />
+      <PageHero eyebrow="Lo conseguimos para vos" title="Productos a pedido" description="Si no está en el catálogo o necesitás más cantidad que la disponible, contanos qué falta. Te confirmamos precio y entrega antes de que decidas." />
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
           <section>
@@ -27,7 +29,7 @@ export default async function SpecialOrdersPage() {
               {steps.map((step, index) => <article key={step.title} className="flex gap-4 rounded-2xl border border-border bg-card p-4"><span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-brand"><step.icon className="size-5" /></span><div><p className="text-xs font-bold uppercase tracking-wider text-brown">Paso {index + 1}</p><h3 className="font-extrabold">{step.title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{step.text}</p></div></article>)}
             </div>
           </section>
-          <SpecialOrderForm whatsappNumber={settings.whatsappNumber} />
+          <SpecialOrderForm whatsappNumber={settings.whatsappNumber} defaultProduct={String(params.producto ?? '').slice(0,240)} defaultQuantity={Number.isInteger(quantity) && quantity >= 1 && quantity <= 999 ? quantity : 1} defaultDetails={String(params.detalle ?? '').slice(0,2000)} />
         </div>
       </div>
     </>

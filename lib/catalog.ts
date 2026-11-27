@@ -116,6 +116,7 @@ function mapProduct(row: PublicProductRow, baseUrl: string): Product | null {
         price: Number(variant.package_price),
         mode: 'package',
         stockCount: inventoryQuantity(variant.inventory),
+        acceptsBackorder: row.on_request || variant.stock_status === 'on_request',
       })
     }
     if (variant.sells_by_kg && Number(row.loose_inventory?.price_per_kg) > 0) {
@@ -125,6 +126,7 @@ function mapProduct(row: PublicProductRow, baseUrl: string): Product | null {
         price: Number(row.loose_inventory?.price_per_kg ?? 0),
         mode: 'kg',
         stockCount: Number(row.loose_inventory?.quantity_kg ?? 0),
+        acceptsBackorder: row.on_request || variant.stock_status === 'on_request',
       })
     }
     return options
@@ -170,7 +172,7 @@ function mapProduct(row: PublicProductRow, baseUrl: string): Product | null {
         : []),
     ],
     important: row.on_request
-      ? 'Este producto se consigue a pedido. Te confirmamos disponibilidad y condiciones antes de avanzar.'
+      ? 'Podés comprar el stock disponible y encargar lo que falte por separado. El precio y la entrega del encargo se confirman antes de pagar.'
       : undefined,
     variants,
   }
@@ -215,7 +217,8 @@ async function fetchPublicProducts(slug?: string): Promise<Product[]> {
     products.push({...first, sourceSlugs:rows.map(row=>row.slug), name:first.name.replace(/\d+(?:[.,]\d+)?\s*(?:kgs?|grs?|g)\b/gi,'').replace(/\s+/g,' ').trim(), variants,
       defaultVariantId:available.id, defaultSaleMode:available.mode, price:available.price,
       presentation: variants.length > 1 ? (loose ? 'Elegí bolsa cerrada o suelto' : 'Elegí el tamaño de la bolsa') : available.mode === 'kg' ? 'Suelto · precio por kg' : available.label,
-      stock: first.stock === 'pedido' ? 'pedido' : variants.some(v=>(v.stockCount??0)>0) ? 'disponible' : 'agotado',
+      acceptsBackorder: variants.some(v => v.acceptsBackorder),
+      stock: variants.some(v=>(v.stockCount??0)>=(v.mode==='kg'?0.001:1)) ? 'disponible' : variants.some(v=>v.acceptsBackorder) ? 'pedido' : 'agotado',
       stockCount:undefined})
   }
   return products
